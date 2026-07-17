@@ -1,0 +1,32 @@
+import { supabase } from "@/integrations/supabase/client";
+
+export async function getMyProfile() {
+  const { data: u } = await supabase.auth.getUser();
+  if (!u.user) return null;
+  const { data } = await supabase.from("profiles").select("*").eq("id", u.user.id).maybeSingle();
+  return data;
+}
+
+export async function getProfileByUsername(username: string) {
+  const { data } = await supabase.from("profiles").select("*").eq("username", username).maybeSingle();
+  return data;
+}
+
+export async function getFriends(userId: string) {
+  // mutual subs = friends. Get users I subscribed to AND who subscribed to me.
+  const { data: iFollow } = await supabase.from("subscriptions").select("subscribed_to_id").eq("subscriber_id", userId);
+  const { data: followsMe } = await supabase.from("subscriptions").select("subscriber_id").eq("subscribed_to_id", userId);
+  const followSet = new Set((iFollow ?? []).map((r) => r.subscribed_to_id));
+  const mutual = (followsMe ?? []).map((r) => r.subscriber_id).filter((id) => followSet.has(id));
+  if (mutual.length === 0) return [];
+  const { data: profiles } = await supabase.from("profiles").select("*").in("id", mutual);
+  return profiles ?? [];
+}
+
+export async function getSubscriptionStatus(myId: string, otherId: string) {
+  const { data } = await supabase.from("subscriptions").select("subscriber_id, subscribed_to_id")
+    .or(`and(subscriber_id.eq.${myId},subscribed_to_id.eq.${otherId}),and(subscriber_id.eq.${otherId},subscribed_to_id.eq.${myId})`);
+  const iSubscribe = !!data?.find((r) => r.subscriber_id === myId && r.subscribed_to_id === otherId);
+  const theySubscribe = !!data?.find((r) => r.subscriber_id === otherId && r.subscribed_to_id === myId);
+  return { iSubscribe, theySubscribe, friends: iSubscribe && theySubscribe };
+}
