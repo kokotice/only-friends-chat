@@ -25,7 +25,7 @@ function FeedPage() {
       const { data } = await supabase.from("posts")
         .select("*, profiles!posts_author_id_fkey(username, display_name), likes(user_id)")
         .order("created_at", { ascending: false }).limit(50);
-      return (data ?? []) as Post[];
+      return (data ?? []) as unknown as Post[];
     },
   });
 

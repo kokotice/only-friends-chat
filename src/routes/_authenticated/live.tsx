@@ -22,7 +22,7 @@ function LivePage() {
     queryKey: ["streams"],
     queryFn: async () => {
       const { data } = await supabase.from("live_streams").select("*, profiles!live_streams_host_id_fkey(username, display_name)").order("started_at", { ascending: false });
-      return (data ?? []) as LiveRow[];
+      return (data ?? []) as unknown as LiveRow[];
     },
     refetchInterval: 5000,
   });
