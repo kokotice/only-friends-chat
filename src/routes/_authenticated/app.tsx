@@ -31,7 +31,7 @@ function MessagesPage() {
 
   return (
     <div className="flex h-full">
-      <div className="w-72 border-r border-border bg-card/40">
+      <div className={`${activeId ? "hidden md:flex" : "flex"} w-full md:w-72 flex-col border-r border-border bg-card/40`}>
         <div className="p-4 border-b border-border">
           <h2 className="text-lg font-bold">Friends</h2>
           <p className="text-xs text-muted-foreground mt-0.5">Mutual subs only</p>
@@ -44,7 +44,7 @@ function MessagesPage() {
           <div className="overflow-y-auto">
             {friends.map((f) => (
               <button key={f.id} onClick={() => setActiveId(f.id)} className={`flex w-full items-center gap-3 p-3 text-left transition-colors ${activeId === f.id ? "bg-primary/10" : "hover:bg-accent"}`}>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-primary font-bold">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-primary font-bold shrink-0">
                   {(f.display_name ?? f.username)[0].toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -56,8 +56,8 @@ function MessagesPage() {
           </div>
         )}
       </div>
-      <div className="flex-1">
-        {active && me ? <ChatView me={me.id} other={active} onSent={() => qc.invalidateQueries({ queryKey: ["msgs"] })} /> : (
+      <div className={`${activeId ? "flex" : "hidden md:flex"} flex-1 flex-col`}>
+        {active && me ? <ChatView me={me.id} other={active} onBack={() => setActiveId(null)} onSent={() => qc.invalidateQueries({ queryKey: ["msgs"] })} /> : (
           <div className="flex h-full items-center justify-center text-muted-foreground">
             <div className="text-center">
               <Search className="mx-auto h-10 w-10 opacity-40" />
@@ -70,7 +70,7 @@ function MessagesPage() {
   );
 }
 
-function ChatView({ me, other, onSent }: { me: string; other: Friend; onSent: () => void }) {
+function ChatView({ me, other, onSent, onBack }: { me: string; other: Friend; onSent: () => void; onBack: () => void }) {
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -108,14 +108,15 @@ function ChatView({ me, other, onSent }: { me: string; other: Friend; onSent: ()
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-border px-6 py-4">
+      <div className="border-b border-border px-4 md:px-6 py-3 md:py-4">
         <div className="flex items-center gap-3">
+          <button onClick={onBack} className="md:hidden text-primary text-sm">←</button>
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-primary font-bold">
             {(other.display_name ?? other.username)[0].toUpperCase()}
           </div>
-          <div>
-            <div className="font-semibold">{other.display_name ?? other.username}</div>
-            <div className="text-xs text-muted-foreground">@{other.username}</div>
+          <div className="min-w-0">
+            <div className="font-semibold truncate">{other.display_name ?? other.username}</div>
+            <div className="text-xs text-muted-foreground truncate">@{other.username}</div>
           </div>
         </div>
       </div>

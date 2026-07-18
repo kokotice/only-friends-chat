@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      gambling_bets: {
+        Row: {
+          created_at: string
+          game: string
+          id: string
+          payout: number
+          result: Json
+          user_id: string
+          wager: number
+        }
+        Insert: {
+          created_at?: string
+          game: string
+          id?: string
+          payout: number
+          result?: Json
+          user_id: string
+          wager: number
+        }
+        Update: {
+          created_at?: string
+          game?: string
+          id?: string
+          payout?: number
+          result?: Json
+          user_id?: string
+          wager?: number
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           created_at: string
@@ -132,25 +162,34 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          boost_until: string | null
           created_at: string
           display_name: string | null
           id: string
+          last_daily_at: string | null
+          sparks: number
           username: string
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          boost_until?: string | null
           created_at?: string
           display_name?: string | null
           id: string
+          last_daily_at?: string | null
+          sparks?: number
           username: string
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          boost_until?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          last_daily_at?: string | null
+          sparks?: number
           username?: string
         }
         Relationships: []
@@ -176,13 +215,53 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          kind: string
+          meta: Json
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          kind: string
+          meta?: Json
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          meta?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      _sparks_adjust: {
+        Args: { _delta: number; _kind: string; _meta?: Json; _uid: string }
+        Returns: number
+      }
       are_friends: { Args: { u1: string; u2: string }; Returns: boolean }
+      boost_profile: { Args: never; Returns: string }
+      change_username: { Args: { _new: string }; Returns: string }
+      claim_daily: { Args: never; Returns: number }
+      gamble_coinflip: {
+        Args: { _pick: string; _wager: number }
+        Returns: Json
+      }
+      gamble_slots: { Args: { _wager: number }; Returns: Json }
       increment_post_view: { Args: { p_id: string }; Returns: undefined }
+      tip_user: { Args: { _amount: number; _to: string }; Returns: number }
     }
     Enums: {
       [_ in never]: never
