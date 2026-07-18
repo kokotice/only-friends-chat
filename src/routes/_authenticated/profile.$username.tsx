@@ -57,18 +57,35 @@ function ProfilePage() {
     qc.invalidateQueries({ queryKey: ["friends"] });
   }
 
+  async function tip() {
+    if (!me || !profile) return;
+    const raw = window.prompt(`Tip @${profile.username} how many 💖?`, "10");
+    if (!raw) return;
+    const amt = parseInt(raw, 10);
+    if (!amt || amt < 1) return toast.error("Bad amount");
+    const { error } = await supabase.rpc("tip_user", { _to: profile.id, _amount: amt });
+    if (error) return toast.error(error.message);
+    toast.success(`Tipped ${amt} 💖 to @${profile.username}`);
+    qc.invalidateQueries({ queryKey: ["my-profile"] });
+  }
+
+  const boosted = profile.boost_until && new Date(profile.boost_until) > new Date();
+
   return (
     <div className="h-full overflow-y-auto">
-      <div className="relative h-40 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent" />
-      <div className="mx-auto max-w-3xl px-6 -mt-16">
-        <div className="flex items-end justify-between">
-          <div className="flex h-28 w-28 items-center justify-center rounded-full border-4 border-background bg-primary/30 text-3xl font-bold text-primary">
+      <div className="relative h-32 md:h-40 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent" />
+      <div className="mx-auto max-w-3xl px-4 md:px-6 -mt-14 md:-mt-16 pb-8">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="flex h-24 w-24 md:h-28 md:w-28 items-center justify-center rounded-full border-4 border-background bg-primary/30 text-3xl font-bold text-primary shrink-0">
             {(profile.display_name ?? profile.username)[0].toUpperCase()}
           </div>
           {!isMe && subStatus && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button onClick={toggleSub} className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${subStatus.iSubscribe ? "border border-border" : "bg-primary text-primary-foreground"}`}>
-                {subStatus.iSubscribe ? <><UserMinus className="h-4 w-4" /> Unsubscribe</> : <><UserPlus className="h-4 w-4" /> Subscribe</>}
+                {subStatus.iSubscribe ? <><UserMinus className="h-4 w-4" /> Unsub</> : <><UserPlus className="h-4 w-4" /> Subscribe</>}
+              </button>
+              <button onClick={tip} className="flex items-center gap-2 rounded-full border border-primary px-4 py-2 text-sm font-semibold text-primary">
+                <Sparkles className="h-4 w-4" /> Tip
               </button>
               {subStatus.friends && (
                 <button onClick={() => nav({ to: "/app" })} className="flex items-center gap-2 rounded-full border border-primary px-4 py-2 text-sm font-semibold text-primary">
@@ -79,7 +96,10 @@ function ProfilePage() {
           )}
         </div>
         <div className="mt-4">
-          <h1 className="text-2xl font-bold">{profile.display_name ?? profile.username}</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-bold">{profile.display_name ?? profile.username}</h1>
+            {boosted && <span className="inline-flex items-center gap-1 rounded-full bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary"><Zap className="h-3 w-3" /> Boosted</span>}
+          </div>
           <p className="text-sm text-muted-foreground">@{profile.username}</p>
           {profile.bio && <p className="mt-2 text-sm">{profile.bio}</p>}
           <div className="mt-3 flex gap-4 text-sm text-muted-foreground">
