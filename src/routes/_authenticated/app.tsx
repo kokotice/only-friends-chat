@@ -70,7 +70,7 @@ function MessagesPage() {
   );
 }
 
-function ChatView({ me, other, onSent }: { me: string; other: Friend; onSent: () => void }) {
+function ChatView({ me, other, onSent, onBack }: { me: string; other: Friend; onSent: () => void; onBack: () => void }) {
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
