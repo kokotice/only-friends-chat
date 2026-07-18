@@ -108,14 +108,15 @@ function ChatView({ me, other, onSent, onBack }: { me: string; other: Friend; on
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-border px-6 py-4">
+      <div className="border-b border-border px-4 md:px-6 py-3 md:py-4">
         <div className="flex items-center gap-3">
+          <button onClick={onBack} className="md:hidden text-primary text-sm">←</button>
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-primary font-bold">
             {(other.display_name ?? other.username)[0].toUpperCase()}
           </div>
-          <div>
-            <div className="font-semibold">{other.display_name ?? other.username}</div>
-            <div className="text-xs text-muted-foreground">@{other.username}</div>
+          <div className="min-w-0">
+            <div className="font-semibold truncate">{other.display_name ?? other.username}</div>
+            <div className="text-xs text-muted-foreground truncate">@{other.username}</div>
           </div>
         </div>
       </div>
