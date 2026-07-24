@@ -1,9 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile, getProfileByUsername, getSubscriptionStatus } from "@/lib/queries";
 import { toast } from "sonner";
-import { UserPlus, UserMinus, MessageCircle, Users, Sparkles, Zap } from "lucide-react";
+import { UserPlus, UserMinus, MessageCircle, Users, Sparkles, Zap, Play } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/profile/$username")({
   component: ProfilePage,
