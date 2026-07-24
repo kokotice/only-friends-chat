@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile } from "@/lib/queries";
-import { Heart, Eye, Play } from "lucide-react";
+import { Heart, Eye, Play, MessageCircle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   component: FeedPage,
@@ -14,6 +14,7 @@ type Post = {
   view_count: number; created_at: string;
   profiles: { username: string; display_name: string | null } | null;
   likes: { user_id: string }[];
+  comments: { id: string }[];
 };
 
 function FeedPage() {
@@ -23,7 +24,7 @@ function FeedPage() {
     queryKey: ["feed"],
     queryFn: async () => {
       const { data } = await supabase.from("posts")
-        .select("*, profiles!posts_author_id_fkey(username, display_name), likes(user_id)")
+        .select("*, profiles!posts_author_id_fkey(username, display_name), likes(user_id), comments(id)")
         .order("created_at", { ascending: false }).limit(50);
       return (data ?? []) as unknown as Post[];
     },
@@ -52,14 +53,20 @@ function PostCard({ post, meId, onChange }: { post: Post; meId?: string; onChang
   const videoRef = useRef<HTMLVideoElement>(null);
   const [signed, setSigned] = useState<string | null>(null);
   const [viewed, setViewed] = useState(false);
+  const [error, setError] = useState(false);
   const liked = !!meId && post.likes.some((l) => l.user_id === meId);
   const likeCount = post.likes.length;
+  const commentCount = post.comments?.length ?? 0;
 
   useEffect(() => {
-    // extract storage path from video_url — we stored the path directly
-    supabase.storage.from("posts").createSignedUrl(post.video_url, 3600).then(({ data }) => {
-      if (data) setSigned(data.signedUrl);
+    let cancelled = false;
+    setError(false);
+    supabase.storage.from("posts").createSignedUrl(post.video_url, 3600).then(({ data, error }) => {
+      if (cancelled) return;
+      if (error || !data) { setError(true); return; }
+      setSigned(data.signedUrl);
     });
+    return () => { cancelled = true; };
   }, [post.video_url]);
 
   async function toggleLike() {
@@ -90,8 +97,21 @@ function PostCard({ post, meId, onChange }: { post: Post; meId?: string; onChang
         </Link>
       </div>
       <div className="relative bg-black aspect-[9/16] max-h-[600px]">
-        {signed ? (
-          <video ref={videoRef} src={signed} controls onPlay={onPlay} className="h-full w-full object-contain" playsInline />
+        {signed && !error ? (
+          <video
+            ref={videoRef}
+            src={signed}
+            controls
+            preload="metadata"
+            playsInline
+            onPlay={onPlay}
+            onError={() => setError(true)}
+            className="h-full w-full object-contain"
+          />
+        ) : error ? (
+          <div className="flex h-full items-center justify-center text-xs text-muted-foreground p-4 text-center">
+            Video unavailable
+          </div>
         ) : (
           <div className="flex h-full items-center justify-center"><Play className="h-10 w-10 text-muted-foreground animate-pulse" /></div>
         )}
@@ -101,6 +121,9 @@ function PostCard({ post, meId, onChange }: { post: Post; meId?: string; onChang
         <button onClick={toggleLike} className={`flex items-center gap-1.5 transition-colors ${liked ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
           <Heart className={`h-5 w-5 ${liked ? "fill-current" : ""}`} /> {likeCount}
         </button>
+        <Link to="/post/$id" params={{ id: post.id }} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
+          <MessageCircle className="h-5 w-5" /> {commentCount}
+        </Link>
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <Eye className="h-5 w-5" /> {post.view_count}
         </div>
