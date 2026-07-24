@@ -1,9 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile, getProfileByUsername, getSubscriptionStatus } from "@/lib/queries";
 import { toast } from "sonner";
-import { UserPlus, UserMinus, MessageCircle, Users, Sparkles, Zap } from "lucide-react";
+import { UserPlus, UserMinus, MessageCircle, Users, Sparkles, Zap, Play } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/profile/$username")({
   component: ProfilePage,
@@ -120,7 +120,11 @@ function ProfilePage() {
             <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No posts yet.</div>
           ) : (
             <div className="grid grid-cols-3 gap-2">
-              {posts.map((p) => <ThumbTile key={p.id} path={p.video_url} likes={p.likes.length} />)}
+              {posts.map((p) => (
+                <Link key={p.id} to="/post/$id" params={{ id: p.id }}>
+                  <ThumbTile path={p.video_url} likes={p.likes.length} />
+                </Link>
+              ))}
             </div>
           )}
         </div>
@@ -132,10 +136,21 @@ function ProfilePage() {
 import { useEffect, useState } from "react";
 function ThumbTile({ path, likes }: { path: string; likes: number }) {
   const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => { supabase.storage.from("posts").createSignedUrl(path, 3600).then(({ data }) => data && setUrl(data.signedUrl)); }, [path]);
+  const [error, setError] = useState(false);
+  useEffect(() => {
+    supabase.storage.from("posts").createSignedUrl(path, 3600).then(({ data, error }) => {
+      if (error || !data) { setError(true); return; }
+      setUrl(data.signedUrl);
+    });
+  }, [path]);
   return (
-    <div className="relative aspect-[9/16] overflow-hidden rounded-lg bg-black">
-      {url && <video src={url} className="h-full w-full object-cover" muted />}
+    <div className="relative aspect-[9/16] overflow-hidden rounded-lg bg-black group">
+      {url && !error ? (
+        <video src={url} className="h-full w-full object-cover" muted playsInline preload="metadata" onError={() => setError(true)} />
+      ) : (
+        <div className="flex h-full items-center justify-center"><Play className="h-6 w-6 text-muted-foreground" /></div>
+      )}
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
       <div className="absolute bottom-1 right-1 rounded bg-black/60 px-1.5 py-0.5 text-xs">♥ {likes}</div>
     </div>
   );

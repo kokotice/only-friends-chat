@@ -20,6 +20,7 @@ import { Route as AuthenticatedDiscoverRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedCasinoRouteImport } from './routes/_authenticated/casino'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedProfileUsernameRouteImport } from './routes/_authenticated/profile.$username'
+import { Route as AuthenticatedPostIdRouteImport } from './routes/_authenticated/post.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -76,6 +77,11 @@ const AuthenticatedProfileUsernameRoute =
     path: '/profile/$username',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPostIdRoute = AuthenticatedPostIdRouteImport.update({
+  id: '/post/$id',
+  path: '/post/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/live': typeof AuthenticatedLiveRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/wallet': typeof AuthenticatedWalletRoute
+  '/post/$id': typeof AuthenticatedPostIdRoute
   '/profile/$username': typeof AuthenticatedProfileUsernameRoute
 }
 export interface FileRoutesByTo {
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/live': typeof AuthenticatedLiveRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/wallet': typeof AuthenticatedWalletRoute
+  '/post/$id': typeof AuthenticatedPostIdRoute
   '/profile/$username': typeof AuthenticatedProfileUsernameRoute
 }
 export interface FileRoutesById {
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/_authenticated/live': typeof AuthenticatedLiveRoute
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
+  '/_authenticated/post/$id': typeof AuthenticatedPostIdRoute
   '/_authenticated/profile/$username': typeof AuthenticatedProfileUsernameRoute
 }
 export interface FileRouteTypes {
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/live'
     | '/upload'
     | '/wallet'
+    | '/post/$id'
     | '/profile/$username'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/live'
     | '/upload'
     | '/wallet'
+    | '/post/$id'
     | '/profile/$username'
   id:
     | '__root__'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/_authenticated/live'
     | '/_authenticated/upload'
     | '/_authenticated/wallet'
+    | '/_authenticated/post/$id'
     | '/_authenticated/profile/$username'
   fileRoutesById: FileRoutesById
 }
@@ -240,6 +252,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileUsernameRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/post/$id': {
+      id: '/_authenticated/post/$id'
+      path: '/post/$id'
+      fullPath: '/post/$id'
+      preLoaderRoute: typeof AuthenticatedPostIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -251,6 +270,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLiveRoute: typeof AuthenticatedLiveRoute
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
+  AuthenticatedPostIdRoute: typeof AuthenticatedPostIdRoute
   AuthenticatedProfileUsernameRoute: typeof AuthenticatedProfileUsernameRoute
 }
 
@@ -262,6 +282,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLiveRoute: AuthenticatedLiveRoute,
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
+  AuthenticatedPostIdRoute: AuthenticatedPostIdRoute,
   AuthenticatedProfileUsernameRoute: AuthenticatedProfileUsernameRoute,
 }
 
