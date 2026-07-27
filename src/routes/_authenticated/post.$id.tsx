@@ -32,7 +32,7 @@ function PostPage() {
     queryKey: ["post", id],
     queryFn: async () => {
       const { data } = await supabase.from("posts")
-        .select("*, profiles!posts_author_id_fkey(username, display_name), likes(user_id)")
+        .select("*, profiles!posts_author_profile_fkey(username, display_name), likes(user_id)")
         .eq("id", id).maybeSingle();
       return (data ?? null) as unknown as PostRow | null;
     },
@@ -42,7 +42,7 @@ function PostPage() {
     queryKey: ["comments", id],
     queryFn: async () => {
       const { data } = await supabase.from("comments")
-        .select("*, profiles!comments_user_id_fkey(username, display_name)")
+        .select("*, profiles!comments_user_profile_fkey(username, display_name)")
         .eq("post_id", id).order("created_at", { ascending: true });
       return (data ?? []) as unknown as CommentRow[];
     },
