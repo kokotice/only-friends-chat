@@ -30,7 +30,7 @@ function FeedPage() {
     queryKey: ["feed"],
     queryFn: async () => {
       const { data } = await supabase.from("posts")
-        .select("*, profiles!posts_author_id_fkey(username, display_name), likes(user_id), comments(id)")
+        .select("*, profiles!posts_author_profile_fkey(username, display_name), likes(user_id), comments(id)")
         .order("created_at", { ascending: false }).limit(50);
       return (data ?? []) as unknown as Post[];
     },
@@ -238,7 +238,7 @@ function CommentsDrawer({ postId, meId, onClose }: { postId: string; meId?: stri
     queryKey: ["comments", postId],
     queryFn: async () => {
       const { data } = await supabase.from("comments")
-        .select("*, profiles!comments_user_id_fkey(username, display_name)")
+        .select("*, profiles!comments_user_profile_fkey(username, display_name)")
         .eq("post_id", postId).order("created_at", { ascending: true });
       return (data ?? []) as unknown as CommentRow[];
     },
