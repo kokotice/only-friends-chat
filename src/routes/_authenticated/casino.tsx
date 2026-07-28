@@ -26,6 +26,8 @@ function CasinoPage() {
         </div>
 
         <Coinflip balance={balance} onDone={() => qc.invalidateQueries()} />
+        <Dice balance={balance} onDone={() => qc.invalidateQueries()} />
+        <Wheel balance={balance} onDone={() => qc.invalidateQueries()} />
         <Slots balance={balance} onDone={() => qc.invalidateQueries()} />
       </div>
     </div>
