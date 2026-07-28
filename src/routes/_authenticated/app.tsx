@@ -4,6 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getFriends, getMyProfile } from "@/lib/queries";
 import { Send, Search } from "lucide-react";
+import { parseShare } from "@/components/ShareToFriends";
+import { SharedMessageCard } from "@/components/SharedMessageCard";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app")({
@@ -124,10 +126,13 @@ function ChatView({ me, other, onSent, onBack }: { me: string; other: Friend; on
         {messages.length === 0 && <div className="text-center text-sm text-muted-foreground py-10">Say hi 👋</div>}
         {messages.map((m) => {
           const mine = m.sender_id === me;
+          const share = parseShare(m.content);
+          const text = share ? m.content.replace(/\[\[share:(post|live):[^\]]+\]\]/, "").trim() : m.content;
           return (
             <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[70%] rounded-2xl px-4 py-2 text-sm ${mine ? "bg-primary text-primary-foreground" : "bg-card"}`}>
-                {m.content}
+              <div className={`max-w-[80%] space-y-2 rounded-2xl px-3 py-2 text-sm ${mine ? "bg-primary text-primary-foreground" : "bg-card"}`}>
+                {text && <div className="px-1 whitespace-pre-wrap break-words">{text}</div>}
+                {share && <SharedMessageCard target={share} mine={mine} />}
               </div>
             </div>
           );
