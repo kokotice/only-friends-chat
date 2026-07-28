@@ -15,6 +15,7 @@ function WalletPage() {
   const { data: me } = useQuery({ queryKey: ["my-profile"], queryFn: getMyProfile });
   const { data: txs = [] } = useQuery({ queryKey: ["txs"], queryFn: () => getMyTransactions(30) });
   const [newName, setNewName] = useState("");
+  const [newDisplay, setNewDisplay] = useState("");
   const [busy, setBusy] = useState(false);
 
   const boostActive = me?.boost_until && new Date(me.boost_until) > new Date();
