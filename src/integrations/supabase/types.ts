@@ -292,13 +292,16 @@ export type Database = {
       }
       are_friends: { Args: { u1: string; u2: string }; Returns: boolean }
       boost_profile: { Args: never; Returns: string }
+      change_display_name: { Args: { _new: string }; Returns: string }
       change_username: { Args: { _new: string }; Returns: string }
       claim_daily: { Args: never; Returns: number }
       gamble_coinflip: {
         Args: { _pick: string; _wager: number }
         Returns: Json
       }
+      gamble_dice: { Args: { _pick: string; _wager: number }; Returns: Json }
       gamble_slots: { Args: { _wager: number }; Returns: Json }
+      gamble_wheel: { Args: { _wager: number }; Returns: Json }
       increment_post_view: { Args: { p_id: string }; Returns: undefined }
       tip_user: { Args: { _amount: number; _to: string }; Returns: number }
     }
