@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile } from "@/lib/queries";
-import { Heart, Eye, Play, Send, Trash2, ArrowLeft } from "lucide-react";
+import { Heart, Eye, Play, Send, Trash2, ArrowLeft, Share2 } from "lucide-react";
+import { ShareToFriends } from "@/components/ShareToFriends";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/post/$id")({
@@ -52,6 +53,7 @@ function PostPage() {
   const [viewed, setViewed] = useState(false);
   const [body, setBody] = useState("");
   const [posting, setPosting] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -155,8 +157,13 @@ function PostPage() {
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Eye className="h-5 w-5" /> {post.view_count}
             </div>
+            <button onClick={() => setSharing(true)} className="ml-auto flex items-center gap-1.5 rounded-full border border-primary px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10">
+              <Share2 className="h-4 w-4" /> Share to friends
+            </button>
           </div>
         </div>
+
+        {sharing && <ShareToFriends target={{ kind: "post", id: post.id }} onClose={() => setSharing(false)} />}
 
         <div className="rounded-2xl border border-border bg-card p-4">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
