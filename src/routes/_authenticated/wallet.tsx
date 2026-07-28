@@ -51,6 +51,18 @@ function WalletPage() {
     qc.invalidateQueries();
   }
 
+  async function changeDisplay(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newDisplay.trim()) return;
+    setBusy(true);
+    const { data, error } = await supabase.rpc("change_display_name", { _new: newDisplay.trim() });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success(`Display name changed to ${data}`);
+    setNewDisplay("");
+    qc.invalidateQueries();
+  }
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-2xl px-4 py-6 md:py-10 space-y-6">
