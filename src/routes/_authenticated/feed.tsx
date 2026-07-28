@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile } from "@/lib/queries";
-import { Heart, Eye, Play, MessageCircle, Send, Trash2, X, Volume2, VolumeX } from "lucide-react";
+import { Heart, Eye, Play, MessageCircle, Send, Trash2, X, Volume2, VolumeX, Share2 } from "lucide-react";
+import { ShareToFriends } from "@/components/ShareToFriends";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/feed")({
@@ -92,6 +93,7 @@ function ReelSlide({
   const [error, setError] = useState(false);
   const [viewed, setViewed] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const liked = !!meId && post.likes.some((l) => l.user_id === meId);
 
   useEffect(() => {
@@ -212,6 +214,15 @@ function ReelSlide({
           </div>
           <span className="text-xs font-semibold">{post.comments?.length ?? 0}</span>
         </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); setSharing(true); }}
+          className="flex flex-col items-center gap-1"
+        >
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 backdrop-blur">
+            <Share2 className="h-6 w-6" />
+          </div>
+          <span className="text-xs font-semibold">Share</span>
+        </button>
         <div className="flex flex-col items-center gap-1">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 backdrop-blur">
             <Eye className="h-6 w-6" />
@@ -225,6 +236,10 @@ function ReelSlide({
           {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         </button>
       </div>
+
+      {sharing && (
+        <ShareToFriends target={{ kind: "post", id: post.id }} onClose={() => setSharing(false)} />
+      )}
     </section>
   );
 }
