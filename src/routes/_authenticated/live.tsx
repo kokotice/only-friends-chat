@@ -129,22 +129,31 @@ function LivePage() {
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {streams.filter((s) => s.host_id !== me?.id).map((s) => (
-                <Link key={s.id} to="/profile/$username" params={{ username: s.profiles?.username ?? "" }}
-                  className="group rounded-xl border border-border bg-card p-4 hover:border-primary/50">
-                  <div className="flex aspect-video items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-transparent">
-                    <Radio className="h-10 w-10 text-primary animate-pulse" />
-                  </div>
-                  <div className="mt-3 flex items-center gap-2">
-                    <span className="inline-block h-2 w-2 rounded-full bg-destructive animate-pulse" />
-                    <span className="text-xs font-semibold uppercase text-destructive">Live</span>
-                    <span className="text-sm">@{s.profiles?.username}</span>
-                  </div>
-                  <div className="mt-1 text-sm font-medium">{s.title}</div>
-                </Link>
+                <div key={s.id} className="group rounded-xl border border-border bg-card p-4 hover:border-primary/50">
+                  <Link to="/profile/$username" params={{ username: s.profiles?.username ?? "" }} className="block">
+                    <div className="flex aspect-video items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-transparent">
+                      <Radio className="h-10 w-10 text-primary animate-pulse" />
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="inline-block h-2 w-2 rounded-full bg-destructive animate-pulse" />
+                      <span className="text-xs font-semibold uppercase text-destructive">Live</span>
+                      <span className="text-sm">@{s.profiles?.username}</span>
+                    </div>
+                    <div className="mt-1 text-sm font-medium">{s.title}</div>
+                  </Link>
+                  <button
+                    onClick={() => setShareTarget({ kind: "live", username: s.profiles?.username ?? "" })}
+                    className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full border border-primary px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
+                  >
+                    <Share2 className="h-3.5 w-3.5" /> Share to friends
+                  </button>
+                </div>
               ))}
             </div>
           )}
         </div>
+
+        {shareTarget && <ShareToFriends target={shareTarget} onClose={() => setShareTarget(null)} />}
       </div>
     </div>
   );
