@@ -119,6 +119,23 @@ function WalletPage() {
           </div>
         </form>
 
+        <form onSubmit={changeDisplay} className="rounded-2xl border border-border bg-card p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <UserCog className="h-5 w-5 text-primary" />
+            <div>
+              <div className="font-semibold">Change display name · 200 💖</div>
+              <div className="text-xs text-muted-foreground">1-40 chars, any text</div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <input value={newDisplay} onChange={(e) => setNewDisplay(e.target.value)} placeholder="New display name"
+              className="flex-1 min-w-0 rounded-lg border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary" />
+            <button disabled={busy || (me?.sparks ?? 0) < 200 || !newDisplay.trim()} className="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+              Change
+            </button>
+          </div>
+        </form>
+
         <div className="rounded-2xl border border-border bg-card p-4">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Recent activity</h2>
           {txs.length === 0 ? (
