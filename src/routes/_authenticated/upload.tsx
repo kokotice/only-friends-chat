@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { getMyProfile } from "@/lib/queries";
 import { UploadCloud, Video as VideoIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/upload")({
@@ -13,11 +15,13 @@ function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [caption, setCaption] = useState("");
   const [uploading, setUploading] = useState(false);
+  const { data: me } = useQuery({ queryKey: ["my-profile"], queryFn: getMyProfile });
+  const maxMb = me?.max_upload_mb ?? 60;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) return toast.error("Pick a video");
-    if (file.size > 60 * 1024 * 1024) return toast.error("Max 60MB");
+    if (file.size > maxMb * 1024 * 1024) return toast.error(`Max ${maxMb}MB — unlock 800MB in the Shop`);
     setUploading(true);
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -57,7 +61,7 @@ function UploadPage() {
               <div className="space-y-2">
                 <UploadCloud className="mx-auto h-10 w-10 text-muted-foreground" />
                 <p className="text-sm font-medium">Choose a video</p>
-                <p className="text-xs text-muted-foreground">MP4 up to 60MB</p>
+                <p className="text-xs text-muted-foreground">{`MP4 up to ${maxMb}MB`}</p>
               </div>
             )}
           </label>

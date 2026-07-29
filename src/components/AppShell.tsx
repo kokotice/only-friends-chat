@@ -1,9 +1,10 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { MessageCircle, Video, Radio, Upload, LogOut, Search, Wallet, Dice5 } from "lucide-react";
+import { MessageCircle, Video, Radio, Upload, LogOut, Search, Wallet, Dice5, ShoppingBag } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile } from "@/lib/queries";
 import logo from "@/assets/logo.png";
+import { UserAvatar } from "@/components/UserAvatar";
 import { toast } from "sonner";
 
 const NAV = [
@@ -13,6 +14,7 @@ const NAV = [
   { to: "/discover", label: "Find", icon: Search },
   { to: "/upload", label: "Post", icon: Upload },
   { to: "/casino", label: "Casino", icon: Dice5 },
+  { to: "/shop", label: "Shop", icon: ShoppingBag },
   { to: "/wallet", label: "Wallet", icon: Wallet },
 ];
 
@@ -54,9 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <span className="font-bold text-primary">💖 {profile.sparks ?? 0}</span>
               </Link>
               <Link to="/profile/$username" params={{ username: profile.username }} className="flex items-center gap-3 rounded-lg p-2 hover:bg-sidebar-accent">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary text-sm font-bold">
-                  {(profile.display_name ?? profile.username)[0].toUpperCase()}
-                </div>
+                <UserAvatar path={profile.avatar_url} name={profile.display_name ?? profile.username} className="h-8 w-8 text-sm" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{profile.display_name ?? profile.username}</div>
                   <div className="truncate text-xs text-muted-foreground">@{profile.username}</div>
@@ -96,7 +96,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           );
         })}
-        <Link to="/wallet" className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] ${path.startsWith("/wallet") || path.startsWith("/casino") ? "text-primary" : "text-muted-foreground"}`}>
+        <Link to="/wallet" className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] ${path.startsWith("/wallet") || path.startsWith("/casino") || path.startsWith("/shop") ? "text-primary" : "text-muted-foreground"}`}>
           <Wallet className="h-5 w-5" />
           More
         </Link>
