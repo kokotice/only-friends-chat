@@ -204,8 +204,11 @@ export type Database = {
           boost_until: string | null
           created_at: string
           display_name: string | null
+          gen_claimed_at: string | null
+          gen_until: string | null
           id: string
           last_daily_at: string | null
+          max_upload_mb: number
           sparks: number
           username: string
         }
@@ -215,8 +218,11 @@ export type Database = {
           boost_until?: string | null
           created_at?: string
           display_name?: string | null
+          gen_claimed_at?: string | null
+          gen_until?: string | null
           id: string
           last_daily_at?: string | null
+          max_upload_mb?: number
           sparks?: number
           username: string
         }
@@ -226,8 +232,11 @@ export type Database = {
           boost_until?: string | null
           created_at?: string
           display_name?: string | null
+          gen_claimed_at?: string | null
+          gen_until?: string | null
           id?: string
           last_daily_at?: string | null
+          max_upload_mb?: number
           sparks?: number
           username?: string
         }
@@ -292,9 +301,12 @@ export type Database = {
       }
       are_friends: { Args: { u1: string; u2: string }; Returns: boolean }
       boost_profile: { Args: never; Returns: string }
+      buy_spark_generator: { Args: never; Returns: string }
+      buy_upload_boost: { Args: never; Returns: number }
       change_display_name: { Args: { _new: string }; Returns: string }
       change_username: { Args: { _new: string }; Returns: string }
       claim_daily: { Args: never; Returns: number }
+      claim_generator: { Args: never; Returns: number }
       gamble_coinflip: {
         Args: { _pick: string; _wager: number }
         Returns: Json
