@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile, getProfileByUsername, getSubscriptionStatus } from "@/lib/queries";
+import { UserAvatar } from "@/components/UserAvatar";
 import { toast } from "sonner";
 import { UserPlus, UserMinus, MessageCircle, Users, Sparkles, Zap, Play } from "lucide-react";
 
@@ -76,9 +77,8 @@ function ProfilePage() {
       <div className="relative h-32 md:h-40 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent" />
       <div className="mx-auto max-w-3xl px-4 md:px-6 -mt-14 md:-mt-16 pb-8">
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <div className="flex h-24 w-24 md:h-28 md:w-28 items-center justify-center rounded-full border-4 border-background bg-primary/30 text-3xl font-bold text-primary shrink-0">
-            {(profile.display_name ?? profile.username)[0].toUpperCase()}
-          </div>
+          <UserAvatar path={profile.avatar_url} name={profile.display_name ?? profile.username}
+            className="h-24 w-24 md:h-28 md:w-28 border-4 border-background bg-primary/30 text-3xl shrink-0" />
           {!isMe && subStatus && (
             <div className="flex flex-wrap gap-2">
               <button onClick={toggleSub} className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${subStatus.iSubscribe ? "border border-border" : "bg-primary text-primary-foreground"}`}>

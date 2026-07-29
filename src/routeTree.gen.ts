@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
+import { Route as AuthenticatedShopRouteImport } from './routes/_authenticated/shop'
 import { Route as AuthenticatedLiveRouteImport } from './routes/_authenticated/live'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
 import { Route as AuthenticatedDiscoverRouteImport } from './routes/_authenticated/discover'
@@ -44,6 +45,11 @@ const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
 const AuthenticatedUploadRoute = AuthenticatedUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedShopRoute = AuthenticatedShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLiveRoute = AuthenticatedLiveRouteImport.update({
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/discover': typeof AuthenticatedDiscoverRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/live': typeof AuthenticatedLiveRoute
+  '/shop': typeof AuthenticatedShopRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/post/$id': typeof AuthenticatedPostIdRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/discover': typeof AuthenticatedDiscoverRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/live': typeof AuthenticatedLiveRoute
+  '/shop': typeof AuthenticatedShopRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/post/$id': typeof AuthenticatedPostIdRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/_authenticated/discover': typeof AuthenticatedDiscoverRoute
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
   '/_authenticated/live': typeof AuthenticatedLiveRoute
+  '/_authenticated/shop': typeof AuthenticatedShopRoute
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/post/$id': typeof AuthenticatedPostIdRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/discover'
     | '/feed'
     | '/live'
+    | '/shop'
     | '/upload'
     | '/wallet'
     | '/post/$id'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/discover'
     | '/feed'
     | '/live'
+    | '/shop'
     | '/upload'
     | '/wallet'
     | '/post/$id'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/_authenticated/discover'
     | '/_authenticated/feed'
     | '/_authenticated/live'
+    | '/_authenticated/shop'
     | '/_authenticated/upload'
     | '/_authenticated/wallet'
     | '/_authenticated/post/$id'
@@ -208,6 +220,13 @@ declare module '@tanstack/react-router' {
       path: '/upload'
       fullPath: '/upload'
       preLoaderRoute: typeof AuthenticatedUploadRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/shop': {
+      id: '/_authenticated/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof AuthenticatedShopRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/live': {
@@ -268,6 +287,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDiscoverRoute: typeof AuthenticatedDiscoverRoute
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
   AuthenticatedLiveRoute: typeof AuthenticatedLiveRoute
+  AuthenticatedShopRoute: typeof AuthenticatedShopRoute
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedPostIdRoute: typeof AuthenticatedPostIdRoute
@@ -280,6 +300,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDiscoverRoute: AuthenticatedDiscoverRoute,
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,
   AuthenticatedLiveRoute: AuthenticatedLiveRoute,
+  AuthenticatedShopRoute: AuthenticatedShopRoute,
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedPostIdRoute: AuthenticatedPostIdRoute,
