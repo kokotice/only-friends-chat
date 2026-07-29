@@ -135,7 +135,7 @@ function ShopPage() {
               <div className="mt-3 flex items-center gap-3">
                 <UserAvatar path={me?.avatar_url} name={me?.display_name ?? me?.username ?? "?"} className="h-16 w-16 text-xl" />
                 <div className="flex flex-wrap gap-2">
-                  <button onClick={() => fileRef.current?.click()} disabled={busy}
+                  <button onClick={() => setAvatarOpen(true)} disabled={busy}
                     className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
                     Upload image
                   </button>
@@ -145,7 +145,7 @@ function ShopPage() {
                     </button>
                   )}
                 </div>
-                <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" className="hidden" onChange={pickAvatar} />
+
               </div>
             </div>
           </div>
