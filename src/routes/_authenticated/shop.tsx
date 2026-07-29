@@ -67,29 +67,6 @@ function ShopPage() {
     qc.invalidateQueries();
   }
 
-  async function pickAvatar(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file || !me) return;
-    if (!["image/png", "image/jpeg", "image/svg+xml", "image/webp"].includes(file.type))
-      return toast.error("PNG, JPG or SVG only");
-    if (file.size > 5 * 1024 * 1024) return toast.error("Max 5MB");
-    setBusy(true);
-    try {
-      const ext = file.name.split(".").pop() ?? "png";
-      const path = `${me.id}/${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { contentType: file.type });
-      if (upErr) throw upErr;
-      const { error: dbErr } = await supabase.from("profiles").update({ avatar_url: path }).eq("id", me.id);
-      if (dbErr) throw dbErr;
-      toast.success("Profile picture updated");
-      qc.invalidateQueries();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed");
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function removeAvatar() {
     if (!me) return;
