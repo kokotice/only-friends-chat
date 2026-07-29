@@ -152,6 +152,15 @@ function ShopPage() {
           </div>
         </div>
       </div>
+
+      {me && (
+        <AvatarUploadDialog
+          open={avatarOpen}
+          onOpenChange={setAvatarOpen}
+          userId={me.id}
+          onSaved={() => qc.invalidateQueries()}
+        />
+      )}
     </div>
   );
 }
