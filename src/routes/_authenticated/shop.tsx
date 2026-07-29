@@ -27,7 +27,7 @@ function ShopPage() {
   const { data: me } = useQuery({ queryKey: ["my-profile"], queryFn: getMyProfile });
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(Date.now());
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [avatarOpen, setAvatarOpen] = useState(false);
 
   const genUntil = me?.gen_until ? new Date(me.gen_until).getTime() : 0;
   const genActive = genUntil > now;
