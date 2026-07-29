@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile } from "@/lib/queries";
 import { UserAvatar } from "@/components/UserAvatar";
+import { AvatarUploadDialog } from "@/components/AvatarUploadDialog";
 import { Zap, HardDrive, ImagePlus, ShoppingBag } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/shop")({
@@ -26,7 +27,7 @@ function ShopPage() {
   const { data: me } = useQuery({ queryKey: ["my-profile"], queryFn: getMyProfile });
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(Date.now());
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [avatarOpen, setAvatarOpen] = useState(false);
 
   const genUntil = me?.gen_until ? new Date(me.gen_until).getTime() : 0;
   const genActive = genUntil > now;
@@ -67,29 +68,6 @@ function ShopPage() {
     qc.invalidateQueries();
   }
 
-  async function pickAvatar(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file || !me) return;
-    if (!["image/png", "image/jpeg", "image/svg+xml", "image/webp"].includes(file.type))
-      return toast.error("PNG, JPG or SVG only");
-    if (file.size > 5 * 1024 * 1024) return toast.error("Max 5MB");
-    setBusy(true);
-    try {
-      const ext = file.name.split(".").pop() ?? "png";
-      const path = `${me.id}/${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { contentType: file.type });
-      if (upErr) throw upErr;
-      const { error: dbErr } = await supabase.from("profiles").update({ avatar_url: path }).eq("id", me.id);
-      if (dbErr) throw dbErr;
-      toast.success("Profile picture updated");
-      qc.invalidateQueries();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed");
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function removeAvatar() {
     if (!me) return;
@@ -158,7 +136,7 @@ function ShopPage() {
               <div className="mt-3 flex items-center gap-3">
                 <UserAvatar path={me?.avatar_url} name={me?.display_name ?? me?.username ?? "?"} className="h-16 w-16 text-xl" />
                 <div className="flex flex-wrap gap-2">
-                  <button onClick={() => fileRef.current?.click()} disabled={busy}
+                  <button onClick={() => setAvatarOpen(true)} disabled={busy}
                     className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
                     Upload image
                   </button>
@@ -168,12 +146,21 @@ function ShopPage() {
                     </button>
                   )}
                 </div>
-                <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" className="hidden" onChange={pickAvatar} />
+
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {me && (
+        <AvatarUploadDialog
+          open={avatarOpen}
+          onOpenChange={setAvatarOpen}
+          userId={me.id}
+          onSaved={() => qc.invalidateQueries()}
+        />
+      )}
     </div>
   );
 }
