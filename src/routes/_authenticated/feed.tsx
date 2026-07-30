@@ -1,15 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile } from "@/lib/queries";
-import { Heart, Eye, Play, MessageCircle, Send, Trash2, X, Volume2, VolumeX, Share2 } from "lucide-react";
+import { Heart, Eye, Play, MessageCircle, Send, Trash2, X, Volume2, VolumeX, Share2, Loader2 } from "lucide-react";
 import { ShareToFriends } from "@/components/ShareToFriends";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   component: FeedPage,
 });
+
+const PAGE_SIZE = 8;
 
 type Post = {
   id: string; author_id: string; video_url: string; caption: string | null;
@@ -22,53 +24,100 @@ type Post = {
 type CommentRow = {
   id: string; user_id: string; body: string; created_at: string;
   profiles: { username: string; display_name: string | null } | null;
+  comment_likes: { user_id: string }[];
 };
 
 function FeedPage() {
   const qc = useQueryClient();
   const { data: me } = useQuery({ queryKey: ["my-profile"], queryFn: getMyProfile });
-  const { data: posts = [] } = useQuery<Post[]>({
+
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
     queryKey: ["feed"],
-    queryFn: async () => {
-      const { data } = await supabase.from("posts")
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const from = (pageParam as number) * PAGE_SIZE;
+      const { data, error } = await supabase.from("posts")
         .select("*, profiles!posts_author_profile_fkey(username, display_name), likes(user_id), comments(id)")
-        .order("created_at", { ascending: false }).limit(50);
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE_SIZE - 1);
+      if (error) throw error;
       return (data ?? []) as unknown as Post[];
     },
+    getNextPageParam: (last, all) => (last.length < PAGE_SIZE ? undefined : all.length),
   });
 
+  const posts = useMemo(() => data?.pages.flat() ?? [], [data]);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [muted, setMuted] = useState(true);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [index, setIndex] = useState(0);
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
 
-  const onChange = () => qc.invalidateQueries({ queryKey: ["feed"] });
+  const onChange = useCallback(() => qc.invalidateQueries({ queryKey: ["feed"] }), [qc]);
+
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || el.clientHeight === 0) return;
+    const i = Math.round(el.scrollTop / el.clientHeight);
+    setIndex((prev) => (prev === i ? prev : i));
+    // prefetch more when close to the end
+    if (i >= posts.length - 3 && hasNextPage && !isFetchingNextPage) fetchNextPage();
+  }, [posts.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Loop back to the first reel once the last one finishes / user scrolls past it
+  const restart = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: 0, behavior: "smooth" });
+    setIndex(0);
+  }, []);
 
   return (
     <div className="relative h-full bg-black">
       <div
-        className="h-full overflow-y-auto snap-y snap-mandatory scroll-smooth"
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="h-full overflow-y-auto snap-y snap-mandatory overscroll-contain"
         style={{ scrollbarWidth: "none" }}
       >
         {posts.length === 0 ? (
           <div className="flex h-full items-center justify-center px-6">
             <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
-              No posts yet. <Link to="/upload" className="text-primary hover:underline">Upload the first one</Link>.
+              {isLoading ? (
+                <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+              ) : (
+                <>No posts yet. <Link to="/upload" className="text-primary hover:underline">Upload the first one</Link>.</>
+              )}
             </div>
           </div>
-        ) : posts.map((p) => (
+        ) : posts.map((p, i) => (
           <ReelSlide
             key={p.id}
             post={p}
             meId={me?.id}
             muted={muted}
             onToggleMute={() => setMuted((m) => !m)}
-            active={activeId === p.id}
-            onActive={() => setActiveId(p.id)}
+            active={i === index}
+            near={Math.abs(i - index) <= 1}
+            isLast={i === posts.length - 1 && !hasNextPage}
+            onEnded={restart}
             onOpenComments={() => setCommentsFor(p.id)}
             onChange={onChange}
           />
         ))}
+
+        {isFetchingNextPage && (
+          <div className="flex h-16 items-center justify-center text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+          </div>
+        )}
       </div>
+
+      {posts.length > 0 && (
+        <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+          {Math.min(index + 1, posts.length)} / {posts.length}{hasNextPage ? "+" : ""}
+        </div>
+      )}
 
       {commentsFor && (
         <CommentsDrawer
@@ -82,12 +131,12 @@ function FeedPage() {
 }
 
 function ReelSlide({
-  post, meId, muted, onToggleMute, active, onActive, onOpenComments, onChange,
+  post, meId, muted, onToggleMute, active, near, isLast, onEnded, onOpenComments, onChange,
 }: {
   post: Post; meId?: string; muted: boolean; onToggleMute: () => void;
-  active: boolean; onActive: () => void; onOpenComments: () => void; onChange: () => void;
+  active: boolean; near: boolean; isLast: boolean; onEnded: () => void;
+  onOpenComments: () => void; onChange: () => void;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [signed, setSigned] = useState<string | null>(null);
   const [error, setError] = useState(false);
@@ -96,34 +145,23 @@ function ReelSlide({
   const [sharing, setSharing] = useState(false);
   const liked = !!meId && post.likes.some((l) => l.user_id === meId);
 
+  // Resolve a signed URL only when the slide is near the viewport (avoids
+  // hundreds of parallel storage calls, which was the main playback bug).
   useEffect(() => {
+    if (!near || signed) return;
     let cancelled = false;
     setError(false);
-    supabase.storage.from("posts").createSignedUrl(post.video_url, 3600).then(({ data, error }) => {
+    supabase.storage.from("posts").createSignedUrl(post.video_url, 60 * 60 * 6).then(({ data, error }) => {
       if (cancelled) return;
-      if (error || !data) { setError(true); return; }
+      if (error || !data?.signedUrl) { setError(true); return; }
       setSigned(data.signedUrl);
     });
     return () => { cancelled = true; };
-  }, [post.video_url]);
+  }, [near, signed, post.video_url]);
 
-  // Intersection observer -> autoplay when visible
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.intersectionRatio >= 0.6) {
-            onActive();
-          }
-        }
-      },
-      { threshold: [0, 0.6, 1] }
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [onActive]);
+    if (!active) setPaused(false);
+  }, [active]);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -132,12 +170,13 @@ function ReelSlide({
       v.play().catch(() => {});
       if (!viewed) {
         setViewed(true);
-        supabase.rpc("increment_post_view", { p_id: post.id });
+        supabase.rpc("increment_post_view", { p_id: post.id }).then(() => onChange());
       }
     } else {
       v.pause();
+      if (!active) { try { v.currentTime = 0; } catch { /* noop */ } }
     }
-  }, [active, paused, signed, viewed, post.id]);
+  }, [active, paused, signed, viewed, post.id, onChange]);
 
   async function toggleLike() {
     if (!meId) return;
@@ -150,19 +189,17 @@ function ReelSlide({
   }
 
   return (
-    <section
-      ref={containerRef}
-      className="relative h-full w-full snap-start snap-always"
-    >
+    <section className="relative h-full w-full shrink-0 snap-start snap-always">
       <div className="absolute inset-0 flex items-center justify-center bg-black" onClick={() => setPaused((p) => !p)}>
         {signed && !error ? (
           <video
             ref={videoRef}
             src={signed}
-            loop
+            loop={!isLast}
             muted={muted}
             playsInline
-            preload="metadata"
+            preload={near ? "auto" : "none"}
+            onEnded={() => { if (isLast) onEnded(); }}
             onError={() => setError(true)}
             className="h-full w-full object-contain"
           />
@@ -223,7 +260,7 @@ function ReelSlide({
           </div>
           <span className="text-xs font-semibold">Share</span>
         </button>
-        <div className="flex flex-col items-center gap-1">
+        <div className="flex flex-col items-center gap-1" title="Unique viewers">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 backdrop-blur">
             <Eye className="h-6 w-6" />
           </div>
@@ -253,7 +290,7 @@ function CommentsDrawer({ postId, meId, onClose }: { postId: string; meId?: stri
     queryKey: ["comments", postId],
     queryFn: async () => {
       const { data } = await supabase.from("comments")
-        .select("*, profiles!comments_user_profile_fkey(username, display_name)")
+        .select("*, profiles!comments_user_profile_fkey(username, display_name), comment_likes(user_id)")
         .eq("post_id", postId).order("created_at", { ascending: true });
       return (data ?? []) as unknown as CommentRow[];
     },
@@ -275,10 +312,24 @@ function CommentsDrawer({ postId, meId, onClose }: { postId: string; meId?: stri
     setPosting(false);
     if (error) return toast.error(error.message);
     setBody("");
+    qc.invalidateQueries({ queryKey: ["comments", postId] });
   }
 
   async function del(cid: string) {
     await supabase.from("comments").delete().eq("id", cid);
+    qc.invalidateQueries({ queryKey: ["comments", postId] });
+  }
+
+  async function toggleCommentLike(c: CommentRow) {
+    if (!meId) return;
+    const mine = c.comment_likes?.some((l) => l.user_id === meId);
+    if (mine) {
+      await supabase.from("comment_likes").delete().eq("comment_id", c.id).eq("user_id", meId);
+    } else {
+      const { error } = await supabase.from("comment_likes").insert({ comment_id: c.id, user_id: meId });
+      if (error) return toast.error(error.message);
+    }
+    qc.invalidateQueries({ queryKey: ["comments", postId] });
   }
 
   return (
@@ -297,29 +348,41 @@ function CommentsDrawer({ postId, meId, onClose }: { postId: string; meId?: stri
           {comments.length === 0 && (
             <p className="py-8 text-center text-sm text-muted-foreground">Be the first to comment.</p>
           )}
-          {comments.map((c) => (
-            <div key={c.id} className="flex gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary text-xs font-bold">
-                {(c.profiles?.display_name ?? c.profiles?.username ?? "?")[0].toUpperCase()}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 text-xs">
-                  <Link to="/profile/$username" params={{ username: c.profiles?.username ?? "" }} className="font-semibold hover:underline">
-                    @{c.profiles?.username}
-                  </Link>
-                  <span className="text-muted-foreground">
-                    {new Date(c.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                  {meId === c.user_id && (
-                    <button onClick={() => del(c.id)} className="ml-auto text-muted-foreground hover:text-destructive">
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  )}
+          {comments.map((c) => {
+            const likeCount = c.comment_likes?.length ?? 0;
+            const mine = !!meId && (c.comment_likes ?? []).some((l) => l.user_id === meId);
+            return (
+              <div key={c.id} className="flex gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary text-xs font-bold">
+                  {(c.profiles?.display_name ?? c.profiles?.username ?? "?")[0].toUpperCase()}
                 </div>
-                <p className="text-sm break-words">{c.body}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 text-xs">
+                    <Link to="/profile/$username" params={{ username: c.profiles?.username ?? "" }} className="font-semibold hover:underline">
+                      @{c.profiles?.username}
+                    </Link>
+                    <span className="text-muted-foreground">
+                      {new Date(c.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                    {meId === c.user_id && (
+                      <button onClick={() => del(c.id)} className="ml-auto text-muted-foreground hover:text-destructive">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-sm break-words">{c.body}</p>
+                </div>
+                <button
+                  onClick={() => toggleCommentLike(c)}
+                  className={`flex shrink-0 flex-col items-center gap-0.5 self-start pt-1 text-xs ${mine ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                  aria-label="Like comment"
+                >
+                  <Heart className={`h-4 w-4 ${mine ? "fill-current" : ""}`} />
+                  {likeCount > 0 && <span>{likeCount}</span>}
+                </button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <form onSubmit={submit} className="flex gap-2 border-t border-border p-3">
           <input
