@@ -109,6 +109,105 @@ export type Database = {
         }
         Relationships: []
       }
+      group_members: {
+        Row: {
+          created_at: string
+          group_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_members_user_profile_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_messages: {
+        Row: {
+          content: string
+          created_at: string
+          group_id: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          group_id: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_messages_sender_profile_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          seat_limit: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          seat_limit?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          seat_limit?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           created_at: string
@@ -359,6 +458,7 @@ export type Database = {
       change_username: { Args: { _new: string }; Returns: string }
       claim_daily: { Args: never; Returns: number }
       claim_generator: { Args: never; Returns: number }
+      create_group: { Args: { _name: string }; Returns: string }
       gamble_coinflip: {
         Args: { _pick: string; _wager: number }
         Returns: Json
@@ -366,7 +466,20 @@ export type Database = {
       gamble_dice: { Args: { _pick: string; _wager: number }; Returns: Json }
       gamble_slots: { Args: { _wager: number }; Returns: Json }
       gamble_wheel: { Args: { _wager: number }; Returns: Json }
+      group_add_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: number
+      }
+      group_buy_seat: { Args: { _group_id: string }; Returns: number }
       increment_post_view: { Args: { p_id: string }; Returns: undefined }
+      is_group_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_group_owner: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
       tip_user: { Args: { _amount: number; _to: string }; Returns: number }
     }
     Enums: {
