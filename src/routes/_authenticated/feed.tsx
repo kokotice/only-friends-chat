@@ -219,8 +219,13 @@ function ReelSlide({
   }
 
   return (
-    <section className="relative h-full w-full shrink-0 snap-start snap-always">
+    <section
+      ref={(el) => registerSlide(idx, el)}
+      data-idx={idx}
+      className="relative h-full w-full shrink-0 snap-start snap-always"
+    >
       <div className="absolute inset-0 flex items-center justify-center bg-black" onClick={() => setPaused((p) => !p)}>
+
         {signed && !error ? (
           <video
             ref={videoRef}
