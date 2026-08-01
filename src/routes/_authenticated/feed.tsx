@@ -159,11 +159,14 @@ function FeedPage() {
 
 function ReelSlide({
   post, meId, muted, onToggleMute, active, near, isLast, onEnded, onOpenComments, onChange,
+  idx, registerSlide,
 }: {
   post: Post; meId?: string; muted: boolean; onToggleMute: () => void;
   active: boolean; near: boolean; isLast: boolean; onEnded: () => void;
   onOpenComments: () => void; onChange: () => void;
+  idx: number; registerSlide: (i: number, el: HTMLElement | null) => void;
 }) {
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const [signed, setSigned] = useState<string | null>(null);
   const [error, setError] = useState(false);
