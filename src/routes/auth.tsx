@@ -16,11 +16,14 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const { mode: initialMode } = Route.useSearch();
-  const [mode, setMode] = useState<"signin" | "signup">(initialMode ?? "signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">(initialMode ?? "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetStep, setResetStep] = useState<"email" | "code">("email");
+  const [code, setCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -56,11 +59,49 @@ function AuthPage() {
     }
   }
 
+  async function sendResetCode(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+      if (error) throw error;
+      setResetStep("code");
+      toast.success("We've sent you the code on your email, please write the code here.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send the code");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function verifyResetCode(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const token = code.trim();
+      if (token.length < 6) throw new Error("Enter the 6-digit code from your email");
+      const { error } = await supabase.auth.verifyOtp({ email, token, type: "recovery" });
+      if (error) throw error;
+      if (newPassword.length < 6) throw new Error("New password must be at least 6 characters");
+      const { error: upErr } = await supabase.auth.updateUser({ password: newPassword });
+      if (upErr) throw upErr;
+      toast.success("Password updated — you're signed in.");
+      navigate({ to: "/app" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Invalid or expired code");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function google() {
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
     if (result.error) toast.error(result.error.message);
     else if (!result.redirected) navigate({ to: "/app" });
   }
+
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
