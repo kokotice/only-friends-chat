@@ -55,16 +55,41 @@ function FeedPage() {
 
   const onChange = useCallback(() => qc.invalidateQueries({ queryKey: ["feed"] }), [qc]);
 
-  const handleScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el || el.clientHeight === 0) return;
-    const i = Math.round(el.scrollTop / el.clientHeight);
-    setIndex((prev) => (prev === i ? prev : i));
-    // prefetch more when close to the end
-    if (i >= posts.length - 3 && hasNextPage && !isFetchingNextPage) fetchNextPage();
-  }, [posts.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  // Track which slide is actually on screen with an IntersectionObserver
+  // (scroll-position math misfired during momentum scrolling / resizes).
+  const slideEls = useRef(new Map<number, HTMLElement>());
+  const ratios = useRef(new Map<number, number>());
 
-  // Loop back to the first reel once the last one finishes / user scrolls past it
+  const registerSlide = useCallback((i: number, el: HTMLElement | null) => {
+    if (el) slideEls.current.set(i, el);
+    else { slideEls.current.delete(i); ratios.current.delete(i); }
+  }, []);
+
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root || posts.length === 0) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          const i = Number((e.target as HTMLElement).dataset["idx"]);
+          ratios.current.set(i, e.intersectionRatio);
+        }
+        let best = -1, bestRatio = 0;
+        ratios.current.forEach((r, i) => { if (r > bestRatio) { bestRatio = r; best = i; } });
+        if (best >= 0 && bestRatio >= 0.5) setIndex((prev) => (prev === best ? prev : best));
+      },
+      { root, threshold: [0, 0.25, 0.5, 0.75, 1] },
+    );
+    slideEls.current.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [posts.length]);
+
+  // Load more well before hitting the end so scrolling never stalls.
+  useEffect(() => {
+    if (hasNextPage && !isFetchingNextPage && index >= posts.length - 3) fetchNextPage();
+  }, [index, posts.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Loop back to the first reel once the last one finishes
   const restart = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -76,7 +101,6 @@ function FeedPage() {
     <div className="relative h-full bg-black">
       <div
         ref={scrollRef}
-        onScroll={handleScroll}
         className="h-full overflow-y-auto snap-y snap-mandatory overscroll-contain"
         style={{ scrollbarWidth: "none" }}
       >
@@ -93,6 +117,8 @@ function FeedPage() {
         ) : posts.map((p, i) => (
           <ReelSlide
             key={p.id}
+            idx={i}
+            registerSlide={registerSlide}
             post={p}
             meId={me?.id}
             muted={muted}
@@ -105,6 +131,7 @@ function FeedPage() {
             onChange={onChange}
           />
         ))}
+
 
         {isFetchingNextPage && (
           <div className="flex h-16 items-center justify-center text-muted-foreground">
