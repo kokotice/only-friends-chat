@@ -54,7 +54,20 @@ function FeedPage() {
   const [index, setIndex] = useState(0);
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
 
-  const onChange = useCallback(() => qc.invalidateQueries({ queryKey: ["feed"] }), [qc]);
+  // Patch a single post in the cache instead of refetching the whole feed —
+  // a full invalidate re-rendered every slide and caused the scroll stutter.
+  const patchPost = useCallback(
+    (id: string, patch: (p: Post) => Post) =>
+      qc.setQueryData<InfiniteData<Post[]>>(["feed"], (old) =>
+        old
+          ? { ...old, pages: old.pages.map((pg) => pg.map((p) => (p.id === id ? patch(p) : p))) }
+          : old,
+      ),
+    [qc],
+  );
+
+  const toggleMute = useCallback(() => setMuted((m) => !m), []);
+  const openComments = useCallback((id: string) => setCommentsFor(id), []);
 
   // Track which slide is actually on screen with an IntersectionObserver
   // (scroll-position math misfired during momentum scrolling / resizes).
