@@ -164,27 +164,34 @@ function FeedPage() {
         <CommentsDrawer
           postId={commentsFor}
           meId={me?.id}
-          onClose={() => { setCommentsFor(null); onChange(); }}
+          onCountChange={(n) =>
+            patchPost(commentsFor, (p) => ({
+              ...p,
+              comments: Array.from({ length: n }, (_, k) => ({ id: `c${k}` })),
+            }))
+          }
+          onClose={() => setCommentsFor(null)}
         />
       )}
     </div>
   );
 }
 
-function ReelSlide({
-  post, meId, muted, onToggleMute, active, near, isLast, onEnded, onOpenComments, onChange,
+const ReelSlide = memo(function ReelSlide({
+  post, meId, muted, onToggleMute, active, near, isLast, onEnded, onOpenComments, patchPost,
   idx, registerSlide,
 }: {
   post: Post; meId?: string; muted: boolean; onToggleMute: () => void;
   active: boolean; near: boolean; isLast: boolean; onEnded: () => void;
-  onOpenComments: () => void; onChange: () => void;
+  onOpenComments: (id: string) => void;
+  patchPost: (id: string, patch: (p: Post) => Post) => void;
   idx: number; registerSlide: (i: number, el: HTMLElement | null) => void;
 }) {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [signed, setSigned] = useState<string | null>(null);
   const [error, setError] = useState(false);
-  const [viewed, setViewed] = useState(false);
+  const viewedRef = useRef(false);
   const [paused, setPaused] = useState(false);
   const [sharing, setSharing] = useState(false);
   const liked = !!meId && post.likes.some((l) => l.user_id === meId);
@@ -212,24 +219,35 @@ function ReelSlide({
     if (!v) return;
     if (active && !paused) {
       v.play().catch(() => {});
-      if (!viewed) {
-        setViewed(true);
-        supabase.rpc("increment_post_view", { p_id: post.id }).then(() => onChange());
+      if (!viewedRef.current) {
+        viewedRef.current = true;
+        supabase.rpc("increment_post_view", { p_id: post.id }).then(() =>
+          patchPost(post.id, (p) => ({ ...p, view_count: p.view_count + 1 })),
+        );
       }
     } else {
       v.pause();
       if (!active) { try { v.currentTime = 0; } catch { /* noop */ } }
     }
-  }, [active, paused, signed, viewed, post.id, onChange]);
+  }, [active, paused, signed, post.id, patchPost]);
 
   async function toggleLike() {
     if (!meId) return;
-    if (liked) {
-      await supabase.from("likes").delete().eq("post_id", post.id).eq("user_id", meId);
-    } else {
-      await supabase.from("likes").insert({ post_id: post.id, user_id: meId });
+    // Optimistic: flip locally first so the heart responds instantly.
+    patchPost(post.id, (p) => ({
+      ...p,
+      likes: liked ? p.likes.filter((l) => l.user_id !== meId) : [...p.likes, { user_id: meId }],
+    }));
+    const { error } = liked
+      ? await supabase.from("likes").delete().eq("post_id", post.id).eq("user_id", meId)
+      : await supabase.from("likes").insert({ post_id: post.id, user_id: meId });
+    if (error) {
+      patchPost(post.id, (p) => ({
+        ...p,
+        likes: liked ? [...p.likes, { user_id: meId }] : p.likes.filter((l) => l.user_id !== meId),
+      }));
+      toast.error(error.message);
     }
-    onChange();
   }
 
   return (
