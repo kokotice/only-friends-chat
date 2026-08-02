@@ -164,13 +164,8 @@ function FeedPage() {
         <CommentsDrawer
           postId={commentsFor}
           meId={me?.id}
-          onCountChange={(n) =>
-            patchPost(commentsFor, (p) => ({
-              ...p,
-              comments: Array.from({ length: n }, (_, k) => ({ id: `c${k}` })),
-            }))
-          }
-          onClose={() => setCommentsFor(null)}
+          onCountChange={syncCommentCount}
+          onClose={closeComments}
         />
       )}
     </div>
