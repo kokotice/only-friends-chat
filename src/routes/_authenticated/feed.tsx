@@ -68,6 +68,18 @@ function FeedPage() {
 
   const toggleMute = useCallback(() => setMuted((m) => !m), []);
   const openComments = useCallback((id: string) => setCommentsFor(id), []);
+  const closeComments = useCallback(() => setCommentsFor(null), []);
+  const syncCommentCount = useCallback(
+    (n: number) => {
+      if (!commentsFor) return;
+      patchPost(commentsFor, (p) =>
+        (p.comments?.length ?? 0) === n
+          ? p
+          : { ...p, comments: Array.from({ length: n }, (_, k) => ({ id: `c${k}` })) },
+      );
+    },
+    [commentsFor, patchPost],
+  );
 
   // Track which slide is actually on screen with an IntersectionObserver
   // (scroll-position math misfired during momentum scrolling / resizes).
