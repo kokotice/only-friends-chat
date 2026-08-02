@@ -363,6 +363,9 @@ function CommentsDrawer({ postId, meId, onClose, onCountChange }: { postId: stri
     },
   });
 
+  const count = comments.length;
+  useEffect(() => { onCountChange(count); }, [count, onCountChange]);
+
   useEffect(() => {
     const ch = supabase.channel(`comments-drawer:${postId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "comments", filter: `post_id=eq.${postId}` },
