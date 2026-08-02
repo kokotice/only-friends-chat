@@ -346,9 +346,9 @@ const ReelSlide = memo(function ReelSlide({
       )}
     </section>
   );
-}
+});
 
-function CommentsDrawer({ postId, meId, onClose }: { postId: string; meId?: string; onClose: () => void }) {
+function CommentsDrawer({ postId, meId, onClose, onCountChange }: { postId: string; meId?: string; onClose: () => void; onCountChange: (n: number) => void }) {
   const qc = useQueryClient();
   const [body, setBody] = useState("");
   const [posting, setPosting] = useState(false);
