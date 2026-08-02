@@ -136,13 +136,13 @@ function FeedPage() {
             post={p}
             meId={me?.id}
             muted={muted}
-            onToggleMute={() => setMuted((m) => !m)}
+            onToggleMute={toggleMute}
             active={i === index}
             near={Math.abs(i - index) <= 1}
             isLast={i === posts.length - 1 && !hasNextPage}
             onEnded={restart}
-            onOpenComments={() => setCommentsFor(p.id)}
-            onChange={onChange}
+            onOpenComments={openComments}
+            patchPost={patchPost}
           />
         ))}
 
