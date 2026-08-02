@@ -106,9 +106,7 @@ function RootComponent() {
   }, [router, queryClient]);
   return (
     <QueryClientProvider client={queryClient}>
-      <MaintenanceGate>
-        <Outlet />
-      </MaintenanceGate>
+      <Outlet />
       <Toaster theme="dark" position="top-right" richColors />
     </QueryClientProvider>
   );
