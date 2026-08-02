@@ -31,8 +31,8 @@ function Landing() {
           <span className="text-xl font-bold tracking-tight">OnlyFriends</span>
         </div>
         <div className="flex gap-2">
-          <Link to="/auth" className="rounded-full px-4 py-2 text-sm font-medium hover:bg-accent">Sign in</Link>
-          <Link to="/auth" search={{ mode: "signup" } as never} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground glow-pink">Get started</Link>
+          <Link to="/auth" className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium hover:bg-accent">Sign in</Link>
+          <Link to="/auth" search={{ mode: "signup" } as never} className="whitespace-nowrap rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground glow-pink">Get started</Link>
         </div>
       </header>
 

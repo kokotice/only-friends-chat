@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { InfiniteData } from "@tanstack/react-query";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile } from "@/lib/queries";
 import { Heart, Eye, Play, MessageCircle, Send, Trash2, X, Volume2, VolumeX, Share2, Loader2 } from "lucide-react";
@@ -53,7 +54,32 @@ function FeedPage() {
   const [index, setIndex] = useState(0);
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
 
-  const onChange = useCallback(() => qc.invalidateQueries({ queryKey: ["feed"] }), [qc]);
+  // Patch a single post in the cache instead of refetching the whole feed —
+  // a full invalidate re-rendered every slide and caused the scroll stutter.
+  const patchPost = useCallback(
+    (id: string, patch: (p: Post) => Post) =>
+      qc.setQueryData<InfiniteData<Post[]>>(["feed"], (old) =>
+        old
+          ? { ...old, pages: old.pages.map((pg) => pg.map((p) => (p.id === id ? patch(p) : p))) }
+          : old,
+      ),
+    [qc],
+  );
+
+  const toggleMute = useCallback(() => setMuted((m) => !m), []);
+  const openComments = useCallback((id: string) => setCommentsFor(id), []);
+  const closeComments = useCallback(() => setCommentsFor(null), []);
+  const syncCommentCount = useCallback(
+    (n: number) => {
+      if (!commentsFor) return;
+      patchPost(commentsFor, (p) =>
+        (p.comments?.length ?? 0) === n
+          ? p
+          : { ...p, comments: Array.from({ length: n }, (_, k) => ({ id: `c${k}` })) },
+      );
+    },
+    [commentsFor, patchPost],
+  );
 
   // Track which slide is actually on screen with an IntersectionObserver
   // (scroll-position math misfired during momentum scrolling / resizes).
@@ -122,13 +148,13 @@ function FeedPage() {
             post={p}
             meId={me?.id}
             muted={muted}
-            onToggleMute={() => setMuted((m) => !m)}
+            onToggleMute={toggleMute}
             active={i === index}
             near={Math.abs(i - index) <= 1}
             isLast={i === posts.length - 1 && !hasNextPage}
             onEnded={restart}
-            onOpenComments={() => setCommentsFor(p.id)}
-            onChange={onChange}
+            onOpenComments={openComments}
+            patchPost={patchPost}
           />
         ))}
 
@@ -150,27 +176,29 @@ function FeedPage() {
         <CommentsDrawer
           postId={commentsFor}
           meId={me?.id}
-          onClose={() => { setCommentsFor(null); onChange(); }}
+          onCountChange={syncCommentCount}
+          onClose={closeComments}
         />
       )}
     </div>
   );
 }
 
-function ReelSlide({
-  post, meId, muted, onToggleMute, active, near, isLast, onEnded, onOpenComments, onChange,
+const ReelSlide = memo(function ReelSlide({
+  post, meId, muted, onToggleMute, active, near, isLast, onEnded, onOpenComments, patchPost,
   idx, registerSlide,
 }: {
   post: Post; meId?: string; muted: boolean; onToggleMute: () => void;
   active: boolean; near: boolean; isLast: boolean; onEnded: () => void;
-  onOpenComments: () => void; onChange: () => void;
+  onOpenComments: (id: string) => void;
+  patchPost: (id: string, patch: (p: Post) => Post) => void;
   idx: number; registerSlide: (i: number, el: HTMLElement | null) => void;
 }) {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [signed, setSigned] = useState<string | null>(null);
   const [error, setError] = useState(false);
-  const [viewed, setViewed] = useState(false);
+  const viewedRef = useRef(false);
   const [paused, setPaused] = useState(false);
   const [sharing, setSharing] = useState(false);
   const liked = !!meId && post.likes.some((l) => l.user_id === meId);
@@ -198,24 +226,35 @@ function ReelSlide({
     if (!v) return;
     if (active && !paused) {
       v.play().catch(() => {});
-      if (!viewed) {
-        setViewed(true);
-        supabase.rpc("increment_post_view", { p_id: post.id }).then(() => onChange());
+      if (!viewedRef.current) {
+        viewedRef.current = true;
+        supabase.rpc("increment_post_view", { p_id: post.id }).then(() =>
+          patchPost(post.id, (p) => ({ ...p, view_count: p.view_count + 1 })),
+        );
       }
     } else {
       v.pause();
       if (!active) { try { v.currentTime = 0; } catch { /* noop */ } }
     }
-  }, [active, paused, signed, viewed, post.id, onChange]);
+  }, [active, paused, signed, post.id, patchPost]);
 
   async function toggleLike() {
     if (!meId) return;
-    if (liked) {
-      await supabase.from("likes").delete().eq("post_id", post.id).eq("user_id", meId);
-    } else {
-      await supabase.from("likes").insert({ post_id: post.id, user_id: meId });
+    // Optimistic: flip locally first so the heart responds instantly.
+    patchPost(post.id, (p) => ({
+      ...p,
+      likes: liked ? p.likes.filter((l) => l.user_id !== meId) : [...p.likes, { user_id: meId }],
+    }));
+    const { error } = liked
+      ? await supabase.from("likes").delete().eq("post_id", post.id).eq("user_id", meId)
+      : await supabase.from("likes").insert({ post_id: post.id, user_id: meId });
+    if (error) {
+      patchPost(post.id, (p) => ({
+        ...p,
+        likes: liked ? [...p.likes, { user_id: meId }] : p.likes.filter((l) => l.user_id !== meId),
+      }));
+      toast.error(error.message);
     }
-    onChange();
   }
 
   return (
@@ -278,7 +317,7 @@ function ReelSlide({
           <span className="text-xs font-semibold">{post.likes.length}</span>
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); onOpenComments(); }}
+          onClick={(e) => { e.stopPropagation(); onOpenComments(post.id); }}
           className="flex flex-col items-center gap-1"
         >
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 backdrop-blur">
@@ -314,9 +353,9 @@ function ReelSlide({
       )}
     </section>
   );
-}
+});
 
-function CommentsDrawer({ postId, meId, onClose }: { postId: string; meId?: string; onClose: () => void }) {
+function CommentsDrawer({ postId, meId, onClose, onCountChange }: { postId: string; meId?: string; onClose: () => void; onCountChange: (n: number) => void }) {
   const qc = useQueryClient();
   const [body, setBody] = useState("");
   const [posting, setPosting] = useState(false);
@@ -330,6 +369,9 @@ function CommentsDrawer({ postId, meId, onClose }: { postId: string; meId?: stri
       return (data ?? []) as unknown as CommentRow[];
     },
   });
+
+  const count = comments.length;
+  useEffect(() => { onCountChange(count); }, [count, onCountChange]);
 
   useEffect(() => {
     const ch = supabase.channel(`comments-drawer:${postId}`)
