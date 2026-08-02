@@ -310,7 +310,7 @@ const ReelSlide = memo(function ReelSlide({
           <span className="text-xs font-semibold">{post.likes.length}</span>
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); onOpenComments(); }}
+          onClick={(e) => { e.stopPropagation(); onOpenComments(post.id); }}
           className="flex flex-col items-center gap-1"
         >
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 backdrop-blur">
