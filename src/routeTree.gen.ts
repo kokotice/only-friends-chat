@@ -16,6 +16,7 @@ import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
 import { Route as AuthenticatedShopRouteImport } from './routes/_authenticated/shop'
 import { Route as AuthenticatedLiveRouteImport } from './routes/_authenticated/live'
+import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
 import { Route as AuthenticatedDiscoverRouteImport } from './routes/_authenticated/discover'
 import { Route as AuthenticatedCasinoRouteImport } from './routes/_authenticated/casino'
@@ -57,6 +58,12 @@ const AuthenticatedLiveRoute = AuthenticatedLiveRouteImport.update({
   path: '/live',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLeaderboardRoute =
+  AuthenticatedLeaderboardRouteImport.update({
+    id: '/leaderboard',
+    path: '/leaderboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedFeedRoute = AuthenticatedFeedRouteImport.update({
   id: '/feed',
   path: '/feed',
@@ -96,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/casino': typeof AuthenticatedCasinoRoute
   '/discover': typeof AuthenticatedDiscoverRoute
   '/feed': typeof AuthenticatedFeedRoute
+  '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/live': typeof AuthenticatedLiveRoute
   '/shop': typeof AuthenticatedShopRoute
   '/upload': typeof AuthenticatedUploadRoute
@@ -110,6 +118,7 @@ export interface FileRoutesByTo {
   '/casino': typeof AuthenticatedCasinoRoute
   '/discover': typeof AuthenticatedDiscoverRoute
   '/feed': typeof AuthenticatedFeedRoute
+  '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/live': typeof AuthenticatedLiveRoute
   '/shop': typeof AuthenticatedShopRoute
   '/upload': typeof AuthenticatedUploadRoute
@@ -126,6 +135,7 @@ export interface FileRoutesById {
   '/_authenticated/casino': typeof AuthenticatedCasinoRoute
   '/_authenticated/discover': typeof AuthenticatedDiscoverRoute
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
+  '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/live': typeof AuthenticatedLiveRoute
   '/_authenticated/shop': typeof AuthenticatedShopRoute
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/casino'
     | '/discover'
     | '/feed'
+    | '/leaderboard'
     | '/live'
     | '/shop'
     | '/upload'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/casino'
     | '/discover'
     | '/feed'
+    | '/leaderboard'
     | '/live'
     | '/shop'
     | '/upload'
@@ -171,6 +183,7 @@ export interface FileRouteTypes {
     | '/_authenticated/casino'
     | '/_authenticated/discover'
     | '/_authenticated/feed'
+    | '/_authenticated/leaderboard'
     | '/_authenticated/live'
     | '/_authenticated/shop'
     | '/_authenticated/upload'
@@ -236,6 +249,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLiveRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/leaderboard': {
+      id: '/_authenticated/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof AuthenticatedLeaderboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/feed': {
       id: '/_authenticated/feed'
       path: '/feed'
@@ -286,6 +306,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCasinoRoute: typeof AuthenticatedCasinoRoute
   AuthenticatedDiscoverRoute: typeof AuthenticatedDiscoverRoute
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
+  AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedLiveRoute: typeof AuthenticatedLiveRoute
   AuthenticatedShopRoute: typeof AuthenticatedShopRoute
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
@@ -299,6 +320,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCasinoRoute: AuthenticatedCasinoRoute,
   AuthenticatedDiscoverRoute: AuthenticatedDiscoverRoute,
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,
+  AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedLiveRoute: AuthenticatedLiveRoute,
   AuthenticatedShopRoute: AuthenticatedShopRoute,
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
