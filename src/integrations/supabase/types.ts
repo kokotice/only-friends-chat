@@ -287,6 +287,35 @@ export type Database = {
         }
         Relationships: []
       }
+      post_shares: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_shares_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_views: {
         Row: {
           created_at: string
@@ -358,6 +387,7 @@ export type Database = {
           gen_claimed_at: string | null
           gen_until: string | null
           id: string
+          last_bet_at: string | null
           last_daily_at: string | null
           max_upload_mb: number
           sparks: number
@@ -372,6 +402,7 @@ export type Database = {
           gen_claimed_at?: string | null
           gen_until?: string | null
           id: string
+          last_bet_at?: string | null
           last_daily_at?: string | null
           max_upload_mb?: number
           sparks?: number
@@ -386,6 +417,7 @@ export type Database = {
           gen_claimed_at?: string | null
           gen_until?: string | null
           id?: string
+          last_bet_at?: string | null
           last_daily_at?: string | null
           max_upload_mb?: number
           sparks?: number
@@ -446,6 +478,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _bet_gate: { Args: never; Returns: undefined }
       _sparks_adjust: {
         Args: { _delta: number; _kind: string; _meta?: Json; _uid: string }
         Returns: number
@@ -459,6 +492,30 @@ export type Database = {
       claim_daily: { Args: never; Returns: number }
       claim_generator: { Args: never; Returns: number }
       create_group: { Args: { _name: string }; Returns: string }
+      create_post: {
+        Args: { _bytes: number; _caption: string; _video_url: string }
+        Returns: string
+      }
+      feed_ranked: {
+        Args: { _limit?: number; _offset?: number }
+        Returns: {
+          author_id: string
+          avatar_url: string
+          caption: string
+          comment_count: number
+          created_at: string
+          display_name: string
+          id: string
+          like_count: number
+          liked_by_me: boolean
+          score: number
+          share_count: number
+          subscribed: boolean
+          username: string
+          video_url: string
+          view_count: number
+        }[]
+      }
       gamble_coinflip: {
         Args: { _pick: string; _wager: number }
         Returns: Json
@@ -480,7 +537,37 @@ export type Database = {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
+      record_share: { Args: { _post_id: string }; Returns: number }
       tip_user: { Args: { _amount: number; _to: string }; Returns: number }
+      top_creators: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          display_name: string
+          id: string
+          subscribed_by_me: boolean
+          subscriber_count: number
+          username: string
+        }[]
+      }
+      top_posts: {
+        Args: { _metric: string }
+        Returns: {
+          author_id: string
+          avatar_url: string
+          caption: string
+          created_at: string
+          display_name: string
+          id: string
+          like_count: number
+          metric_value: number
+          share_count: number
+          username: string
+          video_url: string
+          view_count: number
+        }[]
+      }
+      upload_cost: { Args: { _bytes: number }; Returns: number }
     }
     Enums: {
       [_ in never]: never
