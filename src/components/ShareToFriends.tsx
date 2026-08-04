@@ -52,6 +52,11 @@ export function ShareToFriends({ target, onClose, onShared }: { target: ShareTar
     const { error } = await supabase.from("messages").insert(rows);
     setSending(false);
     if (error) return toast.error(error.message);
+    if (target.kind === "post") {
+      // Shares feed the recommendation algorithm + leaderboards.
+      await supabase.rpc("record_share", { _post_id: target.id });
+      onShared?.();
+    }
     toast.success(`Shared with ${selected.size} friend${selected.size > 1 ? "s" : ""}`);
     onClose();
   }
