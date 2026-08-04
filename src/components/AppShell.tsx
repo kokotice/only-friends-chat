@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { MessageCircle, Video, Radio, Upload, LogOut, Search, Wallet, Dice5, ShoppingBag } from "lucide-react";
+import { MessageCircle, Video, Radio, Upload, LogOut, Search, Wallet, Dice5, ShoppingBag, Trophy } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile } from "@/lib/queries";
@@ -13,6 +13,7 @@ const NAV = [
   { to: "/live", label: "Live", icon: Radio },
   { to: "/discover", label: "Find", icon: Search },
   { to: "/upload", label: "Post", icon: Upload },
+  { to: "/leaderboard", label: "Ranks", icon: Trophy },
   { to: "/casino", label: "Casino", icon: Dice5 },
   { to: "/shop", label: "Shop", icon: ShoppingBag },
   { to: "/wallet", label: "Wallet", icon: Wallet },
@@ -64,6 +65,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
             </>
           )}
+          <a
+            href="https://discord.gg/wVSv5sT3dB"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+          >
+            <MessageCircle className="h-4 w-4" /> Discord server
+          </a>
           <button onClick={signOut} className="mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-foreground">
             <LogOut className="h-4 w-4" /> Sign out
           </button>
