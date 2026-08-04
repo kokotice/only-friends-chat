@@ -45,7 +45,7 @@ function UploadPage() {
       // create_post charges 3 Sparks per whole MB and inserts the post atomically.
       const { error: insErr } = await supabase.rpc("create_post", {
         _video_url: path,
-        _caption: caption || null,
+        _caption: caption,
         _bytes: file.size,
       });
       if (insErr) {
