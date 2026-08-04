@@ -4,7 +4,7 @@ import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-quer
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile } from "@/lib/queries";
-import { Heart, Eye, Play, MessageCircle, Send, Trash2, X, Volume2, VolumeX, Share2, Loader2 } from "lucide-react";
+import { Heart, Eye, Play, MessageCircle, Send, Trash2, X, Volume2, VolumeX, Share2, Loader2, UserPlus, UserCheck, Sparkles } from "lucide-react";
 import { ShareToFriends } from "@/components/ShareToFriends";
 import { toast } from "sonner";
 
@@ -17,9 +17,9 @@ const PAGE_SIZE = 8;
 type Post = {
   id: string; author_id: string; video_url: string; caption: string | null;
   view_count: number; created_at: string;
-  profiles: { username: string; display_name: string | null } | null;
-  likes: { user_id: string }[];
-  comments: { id: string }[];
+  username: string | null; display_name: string | null;
+  like_count: number; comment_count: number; share_count: number;
+  liked_by_me: boolean; subscribed: boolean;
 };
 
 type CommentRow = {
@@ -36,11 +36,8 @@ function FeedPage() {
     queryKey: ["feed"],
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
-      const from = (pageParam as number) * PAGE_SIZE;
-      const { data, error } = await supabase.from("posts")
-        .select("*, profiles!posts_author_profile_fkey(username, display_name), likes(user_id), comments(id)")
-        .order("created_at", { ascending: false })
-        .range(from, from + PAGE_SIZE - 1);
+      const offset = (pageParam as number) * PAGE_SIZE;
+      const { data, error } = await supabase.rpc("feed_ranked", { _limit: PAGE_SIZE, _offset: offset });
       if (error) throw error;
       return (data ?? []) as unknown as Post[];
     },
@@ -54,16 +51,24 @@ function FeedPage() {
   const [index, setIndex] = useState(0);
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
 
-  // Patch a single post in the cache instead of refetching the whole feed —
-  // a full invalidate re-rendered every slide and caused the scroll stutter.
-  const patchPost = useCallback(
-    (id: string, patch: (p: Post) => Post) =>
+  // Patch posts in the cache instead of refetching the whole ranked feed —
+  // a full invalidate re-renders every slide and reshuffles the order.
+  const patchPosts = useCallback(
+    (match: (p: Post) => boolean, patch: (p: Post) => Post) =>
       qc.setQueryData<InfiniteData<Post[]>>(["feed"], (old) =>
         old
-          ? { ...old, pages: old.pages.map((pg) => pg.map((p) => (p.id === id ? patch(p) : p))) }
+          ? { ...old, pages: old.pages.map((pg) => pg.map((p) => (match(p) ? patch(p) : p))) }
           : old,
       ),
     [qc],
+  );
+  const patchPost = useCallback(
+    (id: string, patch: (p: Post) => Post) => patchPosts((p) => p.id === id, patch),
+    [patchPosts],
+  );
+  const patchAuthor = useCallback(
+    (authorId: string, patch: (p: Post) => Post) => patchPosts((p) => p.author_id === authorId, patch),
+    [patchPosts],
   );
 
   const toggleMute = useCallback(() => setMuted((m) => !m), []);
@@ -72,17 +77,12 @@ function FeedPage() {
   const syncCommentCount = useCallback(
     (n: number) => {
       if (!commentsFor) return;
-      patchPost(commentsFor, (p) =>
-        (p.comments?.length ?? 0) === n
-          ? p
-          : { ...p, comments: Array.from({ length: n }, (_, k) => ({ id: `c${k}` })) },
-      );
+      patchPost(commentsFor, (p) => (p.comment_count === n ? p : { ...p, comment_count: n }));
     },
     [commentsFor, patchPost],
   );
 
-  // Track which slide is actually on screen with an IntersectionObserver
-  // (scroll-position math misfired during momentum scrolling / resizes).
+  // Track which slide is actually on screen with an IntersectionObserver.
   const slideEls = useRef(new Map<number, HTMLElement>());
   const ratios = useRef(new Map<number, number>());
 
@@ -110,12 +110,10 @@ function FeedPage() {
     return () => io.disconnect();
   }, [posts.length]);
 
-  // Load more well before hitting the end so scrolling never stalls.
   useEffect(() => {
     if (hasNextPage && !isFetchingNextPage && index >= posts.length - 3) fetchNextPage();
   }, [index, posts.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Loop back to the first reel once the last one finishes
   const restart = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -155,9 +153,9 @@ function FeedPage() {
             onEnded={restart}
             onOpenComments={openComments}
             patchPost={patchPost}
+            patchAuthor={patchAuthor}
           />
         ))}
-
 
         {isFetchingNextPage && (
           <div className="flex h-16 items-center justify-center text-muted-foreground">
@@ -167,8 +165,13 @@ function FeedPage() {
       </div>
 
       {posts.length > 0 && (
-        <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-          {Math.min(index + 1, posts.length)} / {posts.length}{hasNextPage ? "+" : ""}
+        <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-2">
+          <span className="rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+            {Math.min(index + 1, posts.length)} / {posts.length}{hasNextPage ? "+" : ""}
+          </span>
+          <span className="flex items-center gap-1 rounded-full bg-primary/25 px-3 py-1 text-xs font-semibold text-primary backdrop-blur">
+            <Sparkles className="h-3 w-3" /> For you
+          </span>
         </div>
       )}
 
@@ -185,26 +188,26 @@ function FeedPage() {
 }
 
 const ReelSlide = memo(function ReelSlide({
-  post, meId, muted, onToggleMute, active, near, isLast, onEnded, onOpenComments, patchPost,
+  post, meId, muted, onToggleMute, active, near, isLast, onEnded, onOpenComments, patchPost, patchAuthor,
   idx, registerSlide,
 }: {
   post: Post; meId?: string; muted: boolean; onToggleMute: () => void;
   active: boolean; near: boolean; isLast: boolean; onEnded: () => void;
   onOpenComments: (id: string) => void;
   patchPost: (id: string, patch: (p: Post) => Post) => void;
+  patchAuthor: (authorId: string, patch: (p: Post) => Post) => void;
   idx: number; registerSlide: (i: number, el: HTMLElement | null) => void;
 }) {
-
   const videoRef = useRef<HTMLVideoElement>(null);
   const [signed, setSigned] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const viewedRef = useRef(false);
   const [paused, setPaused] = useState(false);
   const [sharing, setSharing] = useState(false);
-  const liked = !!meId && post.likes.some((l) => l.user_id === meId);
+  const [subBusy, setSubBusy] = useState(false);
+  const liked = post.liked_by_me;
+  const isMine = meId === post.author_id;
 
-  // Resolve a signed URL only when the slide is near the viewport (avoids
-  // hundreds of parallel storage calls, which was the main playback bug).
   useEffect(() => {
     if (!near || signed) return;
     let cancelled = false;
@@ -240,10 +243,10 @@ const ReelSlide = memo(function ReelSlide({
 
   async function toggleLike() {
     if (!meId) return;
-    // Optimistic: flip locally first so the heart responds instantly.
     patchPost(post.id, (p) => ({
       ...p,
-      likes: liked ? p.likes.filter((l) => l.user_id !== meId) : [...p.likes, { user_id: meId }],
+      liked_by_me: !liked,
+      like_count: Math.max(0, p.like_count + (liked ? -1 : 1)),
     }));
     const { error } = liked
       ? await supabase.from("likes").delete().eq("post_id", post.id).eq("user_id", meId)
@@ -251,10 +254,27 @@ const ReelSlide = memo(function ReelSlide({
     if (error) {
       patchPost(post.id, (p) => ({
         ...p,
-        likes: liked ? [...p.likes, { user_id: meId }] : p.likes.filter((l) => l.user_id !== meId),
+        liked_by_me: liked,
+        like_count: Math.max(0, p.like_count + (liked ? 1 : -1)),
       }));
       toast.error(error.message);
     }
+  }
+
+  async function toggleSubscribe() {
+    if (!meId || isMine) return;
+    setSubBusy(true);
+    const was = post.subscribed;
+    patchAuthor(post.author_id, (p) => ({ ...p, subscribed: !was }));
+    const { error } = was
+      ? await supabase.from("subscriptions").delete().eq("subscriber_id", meId).eq("subscribed_to_id", post.author_id)
+      : await supabase.from("subscriptions").insert({ subscriber_id: meId, subscribed_to_id: post.author_id });
+    setSubBusy(false);
+    if (error) {
+      patchAuthor(post.author_id, (p) => ({ ...p, subscribed: was }));
+      return toast.error(error.message);
+    }
+    toast.success(was ? "Unsubscribed" : `Subscribed to @${post.username} — more of them in your feed`);
   }
 
   return (
@@ -264,7 +284,6 @@ const ReelSlide = memo(function ReelSlide({
       className="relative h-full w-full shrink-0 snap-start snap-always"
     >
       <div className="absolute inset-0 flex items-center justify-center bg-black" onClick={() => setPaused((p) => !p)}>
-
         {signed && !error ? (
           <video
             ref={videoRef}
@@ -293,13 +312,29 @@ const ReelSlide = memo(function ReelSlide({
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent pt-16 pb-6 px-4">
         <div className="pointer-events-auto flex items-end justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-2 text-white">
-            <Link
-              to="/profile/$username"
-              params={{ username: post.profiles?.username ?? "" }}
-              className="inline-block text-sm font-bold hover:underline"
-            >
-              @{post.profiles?.username}
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                to="/profile/$username"
+                params={{ username: post.username ?? "" }}
+                className="text-sm font-bold hover:underline"
+              >
+                @{post.username}
+              </Link>
+              {!isMine && meId && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleSubscribe(); }}
+                  disabled={subBusy}
+                  className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                    post.subscribed
+                      ? "bg-white/15 text-white backdrop-blur"
+                      : "bg-primary text-primary-foreground"
+                  }`}
+                >
+                  {post.subscribed ? <UserCheck className="h-3 w-3" /> : <UserPlus className="h-3 w-3" />}
+                  {post.subscribed ? "Subscribed" : "Subscribe"}
+                </button>
+              )}
+            </div>
             {post.caption && <p className="text-sm line-clamp-3">{post.caption}</p>}
           </div>
         </div>
@@ -314,7 +349,7 @@ const ReelSlide = memo(function ReelSlide({
           <div className={`flex h-11 w-11 items-center justify-center rounded-full bg-black/40 backdrop-blur ${liked ? "text-primary" : ""}`}>
             <Heart className={`h-6 w-6 ${liked ? "fill-current" : ""}`} />
           </div>
-          <span className="text-xs font-semibold">{post.likes.length}</span>
+          <span className="text-xs font-semibold">{post.like_count}</span>
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); onOpenComments(post.id); }}
@@ -323,7 +358,7 @@ const ReelSlide = memo(function ReelSlide({
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 backdrop-blur">
             <MessageCircle className="h-6 w-6" />
           </div>
-          <span className="text-xs font-semibold">{post.comments?.length ?? 0}</span>
+          <span className="text-xs font-semibold">{post.comment_count}</span>
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); setSharing(true); }}
@@ -332,7 +367,7 @@ const ReelSlide = memo(function ReelSlide({
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 backdrop-blur">
             <Share2 className="h-6 w-6" />
           </div>
-          <span className="text-xs font-semibold">Share</span>
+          <span className="text-xs font-semibold">{post.share_count}</span>
         </button>
         <div className="flex flex-col items-center gap-1" title="Unique viewers">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 backdrop-blur">
@@ -349,7 +384,11 @@ const ReelSlide = memo(function ReelSlide({
       </div>
 
       {sharing && (
-        <ShareToFriends target={{ kind: "post", id: post.id }} onClose={() => setSharing(false)} />
+        <ShareToFriends
+          target={{ kind: "post", id: post.id }}
+          onShared={() => patchPost(post.id, (p) => ({ ...p, share_count: p.share_count + 1 }))}
+          onClose={() => setSharing(false)}
+        />
       )}
     </section>
   );

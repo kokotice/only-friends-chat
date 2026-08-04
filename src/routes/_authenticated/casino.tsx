@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile } from "@/lib/queries";
@@ -13,6 +13,14 @@ function CasinoPage() {
   const qc = useQueryClient();
   const { data: me } = useQuery({ queryKey: ["my-profile"], queryFn: getMyProfile });
   const balance = me?.sparks ?? 0;
+  const [until, setUntil] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(t);
+  }, []);
+  const cooldown = Math.max(0, Math.ceil((until - now) / 1000));
+  const startCooldown = () => setUntil(Date.now() + 10_000);
 
   return (
     <div className="h-full overflow-y-auto">
@@ -20,28 +28,35 @@ function CasinoPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-black">Casino</h1>
-            <p className="text-xs text-muted-foreground">Gamble responsibly — it's just Sparks 😉</p>
+            <p className="text-xs text-muted-foreground">No bet limits — 10s cooldown between bets.</p>
           </div>
           <div className="rounded-full bg-primary/15 px-4 py-2 font-bold text-primary">💖 {balance}</div>
         </div>
 
-        <Coinflip balance={balance} onDone={() => qc.invalidateQueries()} />
-        <Dice balance={balance} onDone={() => qc.invalidateQueries()} />
-        <Wheel balance={balance} onDone={() => qc.invalidateQueries()} />
-        <Slots balance={balance} onDone={() => qc.invalidateQueries()} />
+        <div className={`rounded-xl border px-4 py-2 text-center text-sm font-semibold ${cooldown > 0 ? "border-primary/40 bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>
+          {cooldown > 0 ? `Cooldown — next bet in ${cooldown}s` : "Ready to bet"}
+        </div>
+
+        <Coinflip balance={balance} cooldown={cooldown} onBet={startCooldown} onDone={() => qc.invalidateQueries()} />
+        <Dice balance={balance} cooldown={cooldown} onBet={startCooldown} onDone={() => qc.invalidateQueries()} />
+        <Wheel balance={balance} cooldown={cooldown} onBet={startCooldown} onDone={() => qc.invalidateQueries()} />
+        <Slots balance={balance} cooldown={cooldown} onBet={startCooldown} onDone={() => qc.invalidateQueries()} />
       </div>
     </div>
   );
 }
 
-function Coinflip({ balance, onDone }: { balance: number; onDone: () => void }) {
+function Coinflip({ balance, onDone, cooldown, onBet }: { balance: number; onDone: () => void; cooldown: number; onBet: () => void }) {
   const [wager, setWager] = useState(10);
   const [pick, setPick] = useState<"heads" | "tails">("heads");
   const [busy, setBusy] = useState(false);
   const [last, setLast] = useState<{ win: boolean; roll: string; payout: number } | null>(null);
 
   async function play() {
-    if (wager < 1 || wager > balance) return toast.error("Bad wager");
+    if (wager < 1) return toast.error("Minimum bet is 1 💖");
+    if (wager > balance) return toast.error("Not enough Sparks");
+    if (cooldown > 0) return toast.error(`Wait ${cooldown}s before your next bet`);
+    onBet();
     setBusy(true);
     const { data, error } = await supabase.rpc("gamble_coinflip", { _wager: wager, _pick: pick });
     setBusy(false);
@@ -64,13 +79,14 @@ function Coinflip({ balance, onDone }: { balance: number; onDone: () => void }) 
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <input type="number" min={1} max={1000} value={wager} onChange={(e) => setWager(Math.max(1, Number(e.target.value) || 0))}
+        <input type="number" min={1} value={wager} onChange={(e) => setWager(Math.max(1, Number(e.target.value) || 0))}
           className="w-24 rounded-lg border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary" />
-        {[10, 50, 100, 500].map((v) => (
+        {[10, 50, 100, 500, 1000].map((v) => (
           <button key={v} onClick={() => setWager(v)} className="rounded-lg border border-border px-3 py-2 text-xs hover:border-primary">{v}</button>
         ))}
-        <button onClick={play} disabled={busy} className="ml-auto rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
-          {busy ? "Flipping…" : "Flip"}
+        <button onClick={() => setWager(Math.max(1, balance))} className="rounded-lg border border-border px-3 py-2 text-xs hover:border-primary">All in</button>
+        <button onClick={play} disabled={busy || cooldown > 0} className="ml-auto rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+          {cooldown > 0 ? `${cooldown}s` : busy ? "Flipping…" : "Flip"}
         </button>
       </div>
       {last && (
@@ -82,14 +98,17 @@ function Coinflip({ balance, onDone }: { balance: number; onDone: () => void }) 
   );
 }
 
-function Slots({ balance, onDone }: { balance: number; onDone: () => void }) {
+function Slots({ balance, onDone, cooldown, onBet }: { balance: number; onDone: () => void; cooldown: number; onBet: () => void }) {
   const [wager, setWager] = useState(20);
   const [busy, setBusy] = useState(false);
   const [reels, setReels] = useState<string[]>(["❓", "❓", "❓"]);
   const [msg, setMsg] = useState<string | null>(null);
 
   async function spin() {
-    if (wager < 1 || wager > balance) return toast.error("Bad wager");
+    if (wager < 1) return toast.error("Minimum bet is 1 💖");
+    if (wager > balance) return toast.error("Not enough Sparks");
+    if (cooldown > 0) return toast.error(`Wait ${cooldown}s before your next bet`);
+    onBet();
     setBusy(true);
     setMsg(null);
     const { data, error } = await supabase.rpc("gamble_slots", { _wager: wager });
@@ -121,13 +140,14 @@ function Slots({ balance, onDone }: { balance: number; onDone: () => void }) {
       </div>
       {msg && <div className="text-center text-sm font-semibold text-primary">{msg}</div>}
       <div className="flex flex-wrap items-center gap-2">
-        <input type="number" min={1} max={2000} value={wager} onChange={(e) => setWager(Math.max(1, Number(e.target.value) || 0))}
+        <input type="number" min={1} value={wager} onChange={(e) => setWager(Math.max(1, Number(e.target.value) || 0))}
           className="w-24 rounded-lg border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary" />
-        {[10, 50, 100, 500].map((v) => (
+        {[10, 50, 100, 500, 1000].map((v) => (
           <button key={v} onClick={() => setWager(v)} className="rounded-lg border border-border px-3 py-2 text-xs hover:border-primary">{v}</button>
         ))}
-        <button onClick={spin} disabled={busy} className="ml-auto rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
-          {busy ? "Spinning…" : "Spin"}
+        <button onClick={() => setWager(Math.max(1, balance))} className="rounded-lg border border-border px-3 py-2 text-xs hover:border-primary">All in</button>
+        <button onClick={spin} disabled={busy || cooldown > 0} className="ml-auto rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+          {cooldown > 0 ? `${cooldown}s` : busy ? "Spinning…" : "Spin"}
         </button>
       </div>
       <p className="text-[10px] text-muted-foreground">3 match: 💎 20x · ⭐ 10x · 🔔 6x · 🍋 4x · 🍒 3x. 2 match: push.</p>
@@ -135,14 +155,17 @@ function Slots({ balance, onDone }: { balance: number; onDone: () => void }) {
   );
 }
 
-function Dice({ balance, onDone }: { balance: number; onDone: () => void }) {
+function Dice({ balance, onDone, cooldown, onBet }: { balance: number; onDone: () => void; cooldown: number; onBet: () => void }) {
   const [wager, setWager] = useState(10);
   const [pick, setPick] = useState<"over" | "under">("over");
   const [busy, setBusy] = useState(false);
   const [last, setLast] = useState<{ win: boolean; roll: number; payout: number } | null>(null);
 
   async function play() {
-    if (wager < 1 || wager > balance) return toast.error("Bad wager");
+    if (wager < 1) return toast.error("Minimum bet is 1 💖");
+    if (wager > balance) return toast.error("Not enough Sparks");
+    if (cooldown > 0) return toast.error(`Wait ${cooldown}s before your next bet`);
+    onBet();
     setBusy(true);
     const { data, error } = await supabase.rpc("gamble_dice", { _wager: wager, _pick: pick });
     setBusy(false);
@@ -165,13 +188,14 @@ function Dice({ balance, onDone }: { balance: number; onDone: () => void }) {
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <input type="number" min={1} max={1000} value={wager} onChange={(e) => setWager(Math.max(1, Number(e.target.value) || 0))}
+        <input type="number" min={1} value={wager} onChange={(e) => setWager(Math.max(1, Number(e.target.value) || 0))}
           className="w-24 rounded-lg border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary" />
-        {[10, 50, 100, 500].map((v) => (
+        {[10, 50, 100, 500, 1000].map((v) => (
           <button key={v} onClick={() => setWager(v)} className="rounded-lg border border-border px-3 py-2 text-xs hover:border-primary">{v}</button>
         ))}
-        <button onClick={play} disabled={busy} className="ml-auto rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
-          {busy ? "Rolling…" : "Roll"}
+        <button onClick={() => setWager(Math.max(1, balance))} className="rounded-lg border border-border px-3 py-2 text-xs hover:border-primary">All in</button>
+        <button onClick={play} disabled={busy || cooldown > 0} className="ml-auto rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+          {cooldown > 0 ? `${cooldown}s` : busy ? "Rolling…" : "Roll"}
         </button>
       </div>
       {last && (
@@ -184,14 +208,17 @@ function Dice({ balance, onDone }: { balance: number; onDone: () => void }) {
   );
 }
 
-function Wheel({ balance, onDone }: { balance: number; onDone: () => void }) {
+function Wheel({ balance, onDone, cooldown, onBet }: { balance: number; onDone: () => void; cooldown: number; onBet: () => void }) {
   const [wager, setWager] = useState(20);
   const [busy, setBusy] = useState(false);
   const [spin, setSpin] = useState<string>("—");
   const [msg, setMsg] = useState<string | null>(null);
 
   async function play() {
-    if (wager < 1 || wager > balance) return toast.error("Bad wager");
+    if (wager < 1) return toast.error("Minimum bet is 1 💖");
+    if (wager > balance) return toast.error("Not enough Sparks");
+    if (cooldown > 0) return toast.error(`Wait ${cooldown}s before your next bet`);
+    onBet();
     setBusy(true);
     setMsg(null);
     const { data, error } = await supabase.rpc("gamble_wheel", { _wager: wager });
@@ -221,13 +248,14 @@ function Wheel({ balance, onDone }: { balance: number; onDone: () => void }) {
       </div>
       {msg && <div className="text-center text-sm font-semibold text-primary">{msg}</div>}
       <div className="flex flex-wrap items-center gap-2">
-        <input type="number" min={1} max={1500} value={wager} onChange={(e) => setWager(Math.max(1, Number(e.target.value) || 0))}
+        <input type="number" min={1} value={wager} onChange={(e) => setWager(Math.max(1, Number(e.target.value) || 0))}
           className="w-24 rounded-lg border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary" />
-        {[10, 50, 100, 500].map((v) => (
+        {[10, 50, 100, 500, 1000].map((v) => (
           <button key={v} onClick={() => setWager(v)} className="rounded-lg border border-border px-3 py-2 text-xs hover:border-primary">{v}</button>
         ))}
-        <button onClick={play} disabled={busy} className="ml-auto rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
-          {busy ? "Spinning…" : "Spin"}
+        <button onClick={() => setWager(Math.max(1, balance))} className="rounded-lg border border-border px-3 py-2 text-xs hover:border-primary">All in</button>
+        <button onClick={play} disabled={busy || cooldown > 0} className="ml-auto rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+          {cooldown > 0 ? `${cooldown}s` : busy ? "Spinning…" : "Spin"}
         </button>
       </div>
       <p className="text-[10px] text-muted-foreground">Odds: 2x (30%) · 3x (12%) · 5x (6%) · 10x (2%) · else 0x.</p>
