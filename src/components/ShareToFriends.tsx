@@ -24,7 +24,7 @@ export function parseShare(content: string): ShareTarget | null {
   return { kind: "live", username: m[2] };
 }
 
-export function ShareToFriends({ target, onClose }: { target: ShareTarget; onClose: () => void }) {
+export function ShareToFriends({ target, onClose, onShared }: { target: ShareTarget; onClose: () => void; onShared?: () => void }) {
   const { data: me } = useQuery({ queryKey: ["my-profile"], queryFn: getMyProfile });
   const { data: friends = [] } = useQuery<Friend[]>({
     queryKey: ["friends", me?.id],
