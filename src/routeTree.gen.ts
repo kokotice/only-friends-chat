@@ -19,6 +19,7 @@ import { Route as AuthenticatedLiveRouteImport } from './routes/_authenticated/l
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
 import { Route as AuthenticatedDiscoverRouteImport } from './routes/_authenticated/discover'
+import { Route as AuthenticatedCratesRouteImport } from './routes/_authenticated/crates'
 import { Route as AuthenticatedCasinoRouteImport } from './routes/_authenticated/casino'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedProfileUsernameRouteImport } from './routes/_authenticated/profile.$username'
@@ -74,6 +75,11 @@ const AuthenticatedDiscoverRoute = AuthenticatedDiscoverRouteImport.update({
   path: '/discover',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCratesRoute = AuthenticatedCratesRouteImport.update({
+  id: '/crates',
+  path: '/crates',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCasinoRoute = AuthenticatedCasinoRouteImport.update({
   id: '/casino',
   path: '/casino',
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRoute
   '/casino': typeof AuthenticatedCasinoRoute
+  '/crates': typeof AuthenticatedCratesRoute
   '/discover': typeof AuthenticatedDiscoverRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRoute
   '/casino': typeof AuthenticatedCasinoRoute
+  '/crates': typeof AuthenticatedCratesRoute
   '/discover': typeof AuthenticatedDiscoverRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
   '/_authenticated/casino': typeof AuthenticatedCasinoRoute
+  '/_authenticated/crates': typeof AuthenticatedCratesRoute
   '/_authenticated/discover': typeof AuthenticatedDiscoverRoute
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app'
     | '/casino'
+    | '/crates'
     | '/discover'
     | '/feed'
     | '/leaderboard'
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app'
     | '/casino'
+    | '/crates'
     | '/discover'
     | '/feed'
     | '/leaderboard'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/app'
     | '/_authenticated/casino'
+    | '/_authenticated/crates'
     | '/_authenticated/discover'
     | '/_authenticated/feed'
     | '/_authenticated/leaderboard'
@@ -270,6 +282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDiscoverRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/crates': {
+      id: '/_authenticated/crates'
+      path: '/crates'
+      fullPath: '/crates'
+      preLoaderRoute: typeof AuthenticatedCratesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/casino': {
       id: '/_authenticated/casino'
       path: '/casino'
@@ -304,6 +323,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppRoute: typeof AuthenticatedAppRoute
   AuthenticatedCasinoRoute: typeof AuthenticatedCasinoRoute
+  AuthenticatedCratesRoute: typeof AuthenticatedCratesRoute
   AuthenticatedDiscoverRoute: typeof AuthenticatedDiscoverRoute
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
@@ -318,6 +338,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppRoute: AuthenticatedAppRoute,
   AuthenticatedCasinoRoute: AuthenticatedCasinoRoute,
+  AuthenticatedCratesRoute: AuthenticatedCratesRoute,
   AuthenticatedDiscoverRoute: AuthenticatedDiscoverRoute,
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,

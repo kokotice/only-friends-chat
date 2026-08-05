@@ -28,7 +28,7 @@ function CasinoPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-black">Casino</h1>
-            <p className="text-xs text-muted-foreground">No bet limits — 10s cooldown between bets.</p>
+            <p className="text-xs text-muted-foreground">No bet limits — 10s cooldown between bets. Equip a themed crate drop for extra luck.</p>
           </div>
           <div className="rounded-full bg-primary/15 px-4 py-2 font-bold text-primary">💖 {balance}</div>
         </div>
@@ -69,7 +69,7 @@ function Coinflip({ balance, onDone, cooldown, onBet }: { balance: number; onDon
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4 md:p-6 space-y-4">
-      <h2 className="text-lg font-bold">🪙 Coinflip · 2x payout</h2>
+      <h2 className="text-lg font-bold">🪙 Coinflip · 1.92x payout</h2>
       <div className="grid grid-cols-2 gap-2">
         {(["heads", "tails"] as const).map((p) => (
           <button key={p} onClick={() => setPick(p)}
@@ -150,7 +150,7 @@ function Slots({ balance, onDone, cooldown, onBet }: { balance: number; onDone: 
           {cooldown > 0 ? `${cooldown}s` : busy ? "Spinning…" : "Spin"}
         </button>
       </div>
-      <p className="text-[10px] text-muted-foreground">3 match: 💎 20x · ⭐ 10x · 🔔 6x · 🍋 4x · 🍒 3x. 2 match: push.</p>
+      <p className="text-[10px] text-muted-foreground">3 match: 💎 18x · ⭐ 9x · 🔔 5x · 🍋 4x · 🍒 3x. 2 match: push.</p>
     </div>
   );
 }
@@ -178,7 +178,7 @@ function Dice({ balance, onDone, cooldown, onBet }: { balance: number; onDone: (
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4 md:p-6 space-y-4">
-      <h2 className="text-lg font-bold">🎲 Dice · 1.95x · pick over/under 50</h2>
+      <h2 className="text-lg font-bold">🎲 Dice · 1.9x · over 52 / under 48</h2>
       <div className="grid grid-cols-2 gap-2">
         {(["under", "over"] as const).map((p) => (
           <button key={p} onClick={() => setPick(p)}
@@ -224,7 +224,7 @@ function Wheel({ balance, onDone, cooldown, onBet }: { balance: number; onDone: 
     const { data, error } = await supabase.rpc("gamble_wheel", { _wager: wager });
     if (error) { setBusy(false); return toast.error(error.message); }
     const r = data as { mult: number; payout: number };
-    const slots = ["0x", "2x", "3x", "5x", "10x", "0x", "2x", "0x"];
+    const slots = ["0x", "1.5x", "2.5x", "4x", "9x", "0x", "1.5x", "0x"];
     let i = 0;
     const iv = setInterval(() => {
       setSpin(slots[Math.floor(Math.random() * slots.length)]);
@@ -240,7 +240,7 @@ function Wheel({ balance, onDone, cooldown, onBet }: { balance: number; onDone: 
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4 md:p-6 space-y-4">
-      <h2 className="text-lg font-bold">🎡 Wheel · up to 10x</h2>
+      <h2 className="text-lg font-bold">🎡 Wheel · up to 9x</h2>
       <div className="flex justify-center rounded-2xl bg-black/60 p-6">
         <div className="flex h-24 w-40 items-center justify-center rounded-xl bg-background text-4xl font-black text-primary border border-primary/30">
           {spin}
@@ -258,7 +258,7 @@ function Wheel({ balance, onDone, cooldown, onBet }: { balance: number; onDone: 
           {cooldown > 0 ? `${cooldown}s` : busy ? "Spinning…" : "Spin"}
         </button>
       </div>
-      <p className="text-[10px] text-muted-foreground">Odds: 2x (30%) · 3x (12%) · 5x (6%) · 10x (2%) · else 0x.</p>
+      <p className="text-[10px] text-muted-foreground">Odds: 1.5x (25%) · 2.5x (10%) · 4x (4%) · 9x (1%) · else 0x. Theme luck perks improve every game.</p>
     </div>
   );
 }

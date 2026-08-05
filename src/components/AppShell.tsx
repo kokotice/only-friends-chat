@@ -1,6 +1,8 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { MessageCircle, Video, Radio, Upload, LogOut, Search, Wallet, Dice5, ShoppingBag, Trophy } from "lucide-react";
+import { MessageCircle, Video, Radio, Upload, LogOut, Search, Wallet, Dice5, ShoppingBag, Trophy, Package } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { applyTheme, getThemes } from "@/lib/theme";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile } from "@/lib/queries";
 import logo from "@/assets/logo.png";
@@ -15,6 +17,7 @@ const NAV = [
   { to: "/upload", label: "Post", icon: Upload },
   { to: "/leaderboard", label: "Ranks", icon: Trophy },
   { to: "/casino", label: "Casino", icon: Dice5 },
+  { to: "/crates", label: "Crates", icon: Package },
   { to: "/shop", label: "Shop", icon: ShoppingBag },
   { to: "/wallet", label: "Wallet", icon: Wallet },
 ];
@@ -23,6 +26,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const nav = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { data: profile } = useQuery({ queryKey: ["my-profile"], queryFn: getMyProfile });
+  const { data: themes } = useQuery({ queryKey: ["themes"], queryFn: getThemes, staleTime: Infinity });
+
+  // Apply the equipped theme's tokens to the document.
+  const activeKey = profile?.active_theme;
+  useEffect(() => {
+    if (!themes || !activeKey) return;
+    applyTheme(themes.find((t) => t.key === activeKey));
+  }, [themes, activeKey]);
 
   async function signOut() {
     await supabase.auth.signOut();
