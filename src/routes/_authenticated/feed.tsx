@@ -46,6 +46,11 @@ function FeedPage() {
 
   const posts = useMemo(() => data?.pages.flat() ?? [], [data]);
 
+  // Batch-sign URLs for a window of upcoming posts in ONE request so the next
+  // videos are already resolvable before they scroll into view.
+  const [urls, setUrls] = useState<Record<string, string>>({});
+  const requested = useRef(new Set<string>());
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const [muted, setMuted] = useState(true);
   const [index, setIndex] = useState(0);
@@ -111,6 +116,22 @@ function FeedPage() {
   }, [posts.length]);
 
   useEffect(() => {
+    if (posts.length === 0) return;
+    const window = posts.slice(Math.max(0, index - 1), index + 5).map((p) => p.video_url);
+    const missing = [...new Set(window.filter((u) => u && !requested.current.has(u)))];
+    if (missing.length === 0) return;
+    missing.forEach((u) => requested.current.add(u));
+    let cancelled = false;
+    supabase.storage.from("posts").createSignedUrls(missing, 60 * 60 * 6).then(({ data }) => {
+      if (cancelled || !data) return;
+      const next: Record<string, string> = {};
+      for (const row of data) if (row.path && row.signedUrl) next[row.path] = row.signedUrl;
+      if (Object.keys(next).length) setUrls((prev) => ({ ...prev, ...next }));
+    });
+    return () => { cancelled = true; };
+  }, [index, posts]);
+
+  useEffect(() => {
     if (hasNextPage && !isFetchingNextPage && index >= posts.length - 3) fetchNextPage();
   }, [index, posts.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
@@ -144,11 +165,12 @@ function FeedPage() {
             idx={i}
             registerSlide={registerSlide}
             post={p}
+            src={urls[p.video_url]}
             meId={me?.id}
             muted={muted}
             onToggleMute={toggleMute}
             active={i === index}
-            near={Math.abs(i - index) <= 1}
+            near={i - index >= -1 && i - index <= 2}
             isLast={i === posts.length - 1 && !hasNextPage}
             onEnded={restart}
             onOpenComments={openComments}
@@ -188,10 +210,10 @@ function FeedPage() {
 }
 
 const ReelSlide = memo(function ReelSlide({
-  post, meId, muted, onToggleMute, active, near, isLast, onEnded, onOpenComments, patchPost, patchAuthor,
+  post, src, meId, muted, onToggleMute, active, near, isLast, onEnded, onOpenComments, patchPost, patchAuthor,
   idx, registerSlide,
 }: {
-  post: Post; meId?: string; muted: boolean; onToggleMute: () => void;
+  post: Post; src?: string; meId?: string; muted: boolean; onToggleMute: () => void;
   active: boolean; near: boolean; isLast: boolean; onEnded: () => void;
   onOpenComments: (id: string) => void;
   patchPost: (id: string, patch: (p: Post) => Post) => void;
@@ -199,8 +221,8 @@ const ReelSlide = memo(function ReelSlide({
   idx: number; registerSlide: (i: number, el: HTMLElement | null) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [signed, setSigned] = useState<string | null>(null);
   const [error, setError] = useState(false);
+  const signed = src ?? null;
   const viewedRef = useRef(false);
   const [paused, setPaused] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -208,17 +230,7 @@ const ReelSlide = memo(function ReelSlide({
   const liked = post.liked_by_me;
   const isMine = meId === post.author_id;
 
-  useEffect(() => {
-    if (!near || signed) return;
-    let cancelled = false;
-    setError(false);
-    supabase.storage.from("posts").createSignedUrl(post.video_url, 60 * 60 * 6).then(({ data, error }) => {
-      if (cancelled) return;
-      if (error || !data?.signedUrl) { setError(true); return; }
-      setSigned(data.signedUrl);
-    });
-    return () => { cancelled = true; };
-  }, [near, signed, post.video_url]);
+  useEffect(() => { setError(false); }, [src]);
 
   useEffect(() => {
     if (!active) setPaused(false);
@@ -291,7 +303,9 @@ const ReelSlide = memo(function ReelSlide({
             loop={!isLast}
             muted={muted}
             playsInline
-            preload={near ? "auto" : "none"}
+            preload={active || near ? "auto" : "metadata"}
+            // eslint-disable-next-line react/no-unknown-property
+            disablePictureInPicture
             onEnded={() => { if (isLast) onEnded(); }}
             onError={() => setError(true)}
             className="h-full w-full object-contain"

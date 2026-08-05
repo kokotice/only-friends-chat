@@ -79,6 +79,33 @@ export type Database = {
           },
         ]
       }
+      crates: {
+        Row: {
+          blurb: string | null
+          cost: number
+          key: string
+          name: string
+          odds: Json
+          sort: number
+        }
+        Insert: {
+          blurb?: string | null
+          cost: number
+          key: string
+          name: string
+          odds: Json
+          sort?: number
+        }
+        Update: {
+          blurb?: string | null
+          cost?: number
+          key?: string
+          name?: string
+          odds?: Json
+          sort?: number
+        }
+        Relationships: []
+      }
       gambling_bets: {
         Row: {
           created_at: string
@@ -379,6 +406,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_theme: string
           avatar_url: string | null
           bio: string | null
           boost_until: string | null
@@ -394,6 +422,7 @@ export type Database = {
           username: string
         }
         Insert: {
+          active_theme?: string
           avatar_url?: string | null
           bio?: string | null
           boost_until?: string | null
@@ -409,6 +438,7 @@ export type Database = {
           username: string
         }
         Update: {
+          active_theme?: string
           avatar_url?: string | null
           bio?: string | null
           boost_until?: string | null
@@ -446,6 +476,57 @@ export type Database = {
         }
         Relationships: []
       }
+      themes: {
+        Row: {
+          ac_c: number
+          ac_h: number
+          ac_l: number
+          bg_c: number
+          bg_h: number
+          bg_l: number
+          blurb: string | null
+          created_at: string
+          feed_bonus: number
+          key: string
+          luck_bonus: number
+          name: string
+          rarity: string
+          spark_bonus: number
+        }
+        Insert: {
+          ac_c: number
+          ac_h: number
+          ac_l: number
+          bg_c: number
+          bg_h: number
+          bg_l: number
+          blurb?: string | null
+          created_at?: string
+          feed_bonus?: number
+          key: string
+          luck_bonus?: number
+          name: string
+          rarity: string
+          spark_bonus?: number
+        }
+        Update: {
+          ac_c?: number
+          ac_h?: number
+          ac_l?: number
+          bg_c?: number
+          bg_h?: number
+          bg_l?: number
+          blurb?: string | null
+          created_at?: string
+          feed_bonus?: number
+          key?: string
+          luck_bonus?: number
+          name?: string
+          rarity?: string
+          spark_bonus?: number
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -473,12 +554,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_themes: {
+        Row: {
+          created_at: string
+          theme_key: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          theme_key: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          theme_key?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_themes_theme_key_fkey"
+            columns: ["theme_key"]
+            isOneToOne: false
+            referencedRelation: "themes"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       _bet_gate: { Args: never; Returns: undefined }
+      _luck: { Args: { _uid: string }; Returns: number }
       _sparks_adjust: {
         Args: { _delta: number; _kind: string; _meta?: Json; _uid: string }
         Returns: number
@@ -496,6 +604,7 @@ export type Database = {
         Args: { _bytes: number; _caption: string; _video_url: string }
         Returns: string
       }
+      equip_theme: { Args: { _key: string }; Returns: string }
       feed_ranked: {
         Args: { _limit?: number; _offset?: number }
         Returns: {
@@ -511,6 +620,7 @@ export type Database = {
           score: number
           share_count: number
           subscribed: boolean
+          tier: string
           username: string
           video_url: string
           view_count: number
@@ -537,7 +647,16 @@ export type Database = {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
+      open_crate: { Args: { _key: string }; Returns: Json }
       record_share: { Args: { _post_id: string }; Returns: number }
+      theme_perks: {
+        Args: { _uid: string }
+        Returns: {
+          feed: number
+          luck: number
+          spark: number
+        }[]
+      }
       tip_user: { Args: { _amount: number; _to: string }; Returns: number }
       top_creators: {
         Args: never
