@@ -420,6 +420,8 @@ export type Database = {
           max_upload_mb: number
           sparks: number
           username: string
+          vip_tier: string | null
+          vip_until: string | null
         }
         Insert: {
           active_theme?: string
@@ -436,6 +438,8 @@ export type Database = {
           max_upload_mb?: number
           sparks?: number
           username: string
+          vip_tier?: string | null
+          vip_until?: string | null
         }
         Update: {
           active_theme?: string
@@ -452,6 +456,8 @@ export type Database = {
           max_upload_mb?: number
           sparks?: number
           username?: string
+          vip_tier?: string | null
+          vip_until?: string | null
         }
         Relationships: []
       }
@@ -591,10 +597,12 @@ export type Database = {
         Args: { _delta: number; _kind: string; _meta?: Json; _uid: string }
         Returns: number
       }
+      _vip_bonus: { Args: { _uid: string }; Returns: number }
       are_friends: { Args: { u1: string; u2: string }; Returns: boolean }
       boost_profile: { Args: never; Returns: string }
       buy_spark_generator: { Args: never; Returns: string }
       buy_upload_boost: { Args: never; Returns: number }
+      buy_vip: { Args: { _tier: string }; Returns: string }
       change_display_name: { Args: { _new: string }; Returns: string }
       change_username: { Args: { _new: string }; Returns: string }
       claim_daily: { Args: never; Returns: number }
