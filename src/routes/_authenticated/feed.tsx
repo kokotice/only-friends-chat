@@ -115,17 +115,32 @@ function FeedPage() {
     return () => io.disconnect();
   }, [posts.length]);
 
+  // Re-sign a single path (used when a <video> fails to load a stale URL).
+  const resign = useCallback(async (path: string) => {
+    requested.current.delete(path);
+    const { data } = await supabase.storage.from("posts").createSignedUrl(path, 60 * 60 * 6);
+    if (data?.signedUrl) {
+      requested.current.add(path);
+      setUrls((prev) => ({ ...prev, [path]: data.signedUrl }));
+    }
+  }, []);
+
   useEffect(() => {
     if (posts.length === 0) return;
-    const window = posts.slice(Math.max(0, index - 1), index + 5).map((p) => p.video_url);
+    const window = posts.slice(Math.max(0, index - 2), index + 8).map((p) => p.video_url);
     const missing = [...new Set(window.filter((u) => u && !requested.current.has(u)))];
     if (missing.length === 0) return;
-    missing.forEach((u) => requested.current.add(u));
     let cancelled = false;
-    supabase.storage.from("posts").createSignedUrls(missing, 60 * 60 * 6).then(({ data }) => {
-      if (cancelled || !data) return;
+    supabase.storage.from("posts").createSignedUrls(missing, 60 * 60 * 6).then(({ data, error }) => {
+      if (cancelled) return;
+      if (error || !data) return; // leave unrequested so the next pass retries
       const next: Record<string, string> = {};
-      for (const row of data) if (row.path && row.signedUrl) next[row.path] = row.signedUrl;
+      for (const row of data) {
+        if (row.path && row.signedUrl) {
+          next[row.path] = row.signedUrl;
+          requested.current.add(row.path); // only remember successes
+        }
+      }
       if (Object.keys(next).length) setUrls((prev) => ({ ...prev, ...next }));
     });
     return () => { cancelled = true; };
