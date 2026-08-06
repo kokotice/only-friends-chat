@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getMyProfile } from "@/lib/queries";
+import { PUBLIC_PROFILE_COLUMNS, getMyProfile } from "@/lib/queries";
 import { Search as SearchIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/discover")({
@@ -15,7 +15,7 @@ function DiscoverPage() {
   const { data: people = [] } = useQuery({
     queryKey: ["discover", q, me?.id],
     queryFn: async () => {
-      const query = supabase.from("profiles").select("*").limit(50).order("created_at", { ascending: false });
+      const query = supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).limit(50).order("created_at", { ascending: false });
       const { data } = q ? await query.ilike("username", `%${q}%`) : await query;
       return (data ?? []).filter((p) => p.id !== me?.id);
     },
