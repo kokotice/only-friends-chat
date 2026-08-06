@@ -153,9 +153,10 @@ export function AvatarUploadDialog({
       const path = `${userId}/${crypto.randomUUID()}.png`;
       const { error: upErr } = await supabase.storage.from("avatars").upload(path, blob, { contentType });
       if (upErr) throw upErr;
-      const { error: dbErr } = await supabase.from("profiles").update({ avatar_url: path }).eq("id", userId);
+      // Charges 50 💖 and splits the fee between the founders.
+      const { error: dbErr } = await supabase.rpc("set_avatar" as never, { _path: path } as never);
       if (dbErr) throw dbErr;
-      toast.success("Profile picture updated");
+      toast.success("Profile picture updated · −50 💖");
       onSaved();
       onOpenChange(false);
     } catch (err) {
