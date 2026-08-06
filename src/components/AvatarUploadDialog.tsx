@@ -197,7 +197,7 @@ export function AvatarUploadDialog({
           >
             <Upload className="h-7 w-7 text-primary" />
             <p className="text-sm font-semibold">Drop an image or click to browse</p>
-            <p className="text-xs text-muted-foreground">PNG, JPG or SVG · max 5 MB · saved as PNG</p>
+            <p className="text-xs text-muted-foreground">PNG, JPG or SVG · max 5 MB · saved as PNG · costs 50 💖</p>
           </div>
         )}
 
