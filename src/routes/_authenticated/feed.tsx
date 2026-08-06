@@ -115,17 +115,32 @@ function FeedPage() {
     return () => io.disconnect();
   }, [posts.length]);
 
+  // Re-sign a single path (used when a <video> fails to load a stale URL).
+  const resign = useCallback(async (path: string) => {
+    requested.current.delete(path);
+    const { data } = await supabase.storage.from("posts").createSignedUrl(path, 60 * 60 * 6);
+    if (data?.signedUrl) {
+      requested.current.add(path);
+      setUrls((prev) => ({ ...prev, [path]: data.signedUrl }));
+    }
+  }, []);
+
   useEffect(() => {
     if (posts.length === 0) return;
-    const window = posts.slice(Math.max(0, index - 1), index + 5).map((p) => p.video_url);
+    const window = posts.slice(Math.max(0, index - 2), index + 8).map((p) => p.video_url);
     const missing = [...new Set(window.filter((u) => u && !requested.current.has(u)))];
     if (missing.length === 0) return;
-    missing.forEach((u) => requested.current.add(u));
     let cancelled = false;
-    supabase.storage.from("posts").createSignedUrls(missing, 60 * 60 * 6).then(({ data }) => {
-      if (cancelled || !data) return;
+    supabase.storage.from("posts").createSignedUrls(missing, 60 * 60 * 6).then(({ data, error }) => {
+      if (cancelled) return;
+      if (error || !data) return; // leave unrequested so the next pass retries
       const next: Record<string, string> = {};
-      for (const row of data) if (row.path && row.signedUrl) next[row.path] = row.signedUrl;
+      for (const row of data) {
+        if (row.path && row.signedUrl) {
+          next[row.path] = row.signedUrl;
+          requested.current.add(row.path); // only remember successes
+        }
+      }
       if (Object.keys(next).length) setUrls((prev) => ({ ...prev, ...next }));
     });
     return () => { cancelled = true; };
@@ -173,6 +188,7 @@ function FeedPage() {
             near={i - index >= -1 && i - index <= 2}
             isLast={i === posts.length - 1 && !hasNextPage}
             onEnded={restart}
+            onResign={resign}
             onOpenComments={openComments}
             patchPost={patchPost}
             patchAuthor={patchAuthor}
@@ -211,7 +227,7 @@ function FeedPage() {
 
 const ReelSlide = memo(function ReelSlide({
   post, src, meId, muted, onToggleMute, active, near, isLast, onEnded, onOpenComments, patchPost, patchAuthor,
-  idx, registerSlide,
+  idx, registerSlide, onResign,
 }: {
   post: Post; src?: string; meId?: string; muted: boolean; onToggleMute: () => void;
   active: boolean; near: boolean; isLast: boolean; onEnded: () => void;
@@ -219,11 +235,13 @@ const ReelSlide = memo(function ReelSlide({
   patchPost: (id: string, patch: (p: Post) => Post) => void;
   patchAuthor: (authorId: string, patch: (p: Post) => Post) => void;
   idx: number; registerSlide: (i: number, el: HTMLElement | null) => void;
+  onResign: (path: string) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState(false);
   const signed = src ?? null;
   const viewedRef = useRef(false);
+  const retriesRef = useRef(0);
   const [paused, setPaused] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [subBusy, setSubBusy] = useState(false);
@@ -231,6 +249,24 @@ const ReelSlide = memo(function ReelSlide({
   const isMine = meId === post.author_id;
 
   useEffect(() => { setError(false); }, [src]);
+
+  // A failed load is almost always an expired/failed signed URL — re-sign once
+  // or twice before giving up so slides don't get stuck on "Video unavailable".
+  const handleError = useCallback(() => {
+    if (retriesRef.current < 2) {
+      retriesRef.current += 1;
+      onResign(post.video_url);
+      return;
+    }
+    setError(true);
+  }, [onResign, post.video_url]);
+
+  const retryNow = useCallback(() => {
+    retriesRef.current = 0;
+    setError(false);
+    onResign(post.video_url);
+  }, [onResign, post.video_url]);
+
 
   useEffect(() => {
     if (!active) setPaused(false);
@@ -307,11 +343,16 @@ const ReelSlide = memo(function ReelSlide({
             // eslint-disable-next-line react/no-unknown-property
             disablePictureInPicture
             onEnded={() => { if (isLast) onEnded(); }}
-            onError={() => setError(true)}
+            onError={handleError}
             className="h-full w-full object-contain"
           />
         ) : error ? (
-          <div className="text-xs text-muted-foreground">Video unavailable</div>
+          <button
+            onClick={(e) => { e.stopPropagation(); retryNow(); }}
+            className="rounded-lg border border-border px-4 py-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            Video failed to load — tap to retry
+          </button>
         ) : (
           <Play className="h-10 w-10 text-muted-foreground animate-pulse" />
         )}
