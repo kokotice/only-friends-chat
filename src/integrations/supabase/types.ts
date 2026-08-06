@@ -655,6 +655,33 @@ export type Database = {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
+      my_profile: {
+        Args: never
+        Returns: {
+          active_theme: string
+          avatar_url: string | null
+          bio: string | null
+          boost_until: string | null
+          created_at: string
+          display_name: string | null
+          gen_claimed_at: string | null
+          gen_until: string | null
+          id: string
+          last_bet_at: string | null
+          last_daily_at: string | null
+          max_upload_mb: number
+          sparks: number
+          username: string
+          vip_tier: string | null
+          vip_until: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       open_crate: { Args: { _key: string }; Returns: Json }
       record_share: { Args: { _post_id: string }; Returns: number }
       theme_perks: {

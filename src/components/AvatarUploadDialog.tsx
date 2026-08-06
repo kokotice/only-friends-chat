@@ -46,6 +46,8 @@ export function AvatarUploadDialog({
   const [dragOver, setDragOver] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // SVGs are never stored as-is: they are rasterized to PNG below so no
+  // uploaded markup (scripts, event handlers, external refs) can ever be served.
   const isSvg = file?.type === "image/svg+xml" || /\.svg$/i.test(file?.name ?? "");
 
   const reset = useCallback(() => {
@@ -141,17 +143,14 @@ export function AvatarUploadDialog({
     if (!file) return;
     setBusy(true);
     try {
-      let blob: Blob = file;
-      let ext = isSvg ? "svg" : "png";
-      let contentType = isSvg ? "image/svg+xml" : "image/png";
-      if (!isSvg) {
-        const canvas = canvasRef.current;
-        if (!canvas) throw new Error("Preview not ready");
-        blob = await new Promise<Blob>((res, rej) =>
-          canvas.toBlob((b) => (b ? res(b) : rej(new Error("Could not render the crop"))), "image/png", 0.92),
-        );
-      }
-      const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+      const canvas = canvasRef.current;
+      if (!canvas) throw new Error("Preview not ready");
+      // Everything — including SVG input — is re-encoded as a flat PNG bitmap.
+      const blob: Blob = await new Promise<Blob>((res, rej) =>
+        canvas.toBlob((b) => (b ? res(b) : rej(new Error("Could not render the crop"))), "image/png", 0.92),
+      );
+      const contentType = "image/png";
+      const path = `${userId}/${crypto.randomUUID()}.png`;
       const { error: upErr } = await supabase.storage.from("avatars").upload(path, blob, { contentType });
       if (upErr) throw upErr;
       const { error: dbErr } = await supabase.from("profiles").update({ avatar_url: path }).eq("id", userId);
@@ -197,7 +196,7 @@ export function AvatarUploadDialog({
           >
             <Upload className="h-7 w-7 text-primary" />
             <p className="text-sm font-semibold">Drop an image or click to browse</p>
-            <p className="text-xs text-muted-foreground">PNG, JPG or SVG · max 5 MB</p>
+            <p className="text-xs text-muted-foreground">PNG, JPG or SVG · max 5 MB · saved as PNG</p>
           </div>
         )}
 
@@ -207,17 +206,13 @@ export function AvatarUploadDialog({
               <div
                 ref={dropRef}
                 className="relative h-48 w-48 touch-none overflow-hidden rounded-full border border-border bg-muted"
-                style={{ cursor: isSvg ? "default" : "grab" }}
+                style={{ cursor: "grab" }}
               >
-                {isSvg ? (
-                  <img src={src ?? ""} alt="Avatar preview" className={`h-full w-full ${fit === "cover" ? "object-cover" : "object-contain"}`} />
-                ) : (
-                  <canvas ref={canvasRef} className="h-full w-full" />
-                )}
+                <canvas ref={canvasRef} className="h-full w-full" />
               </div>
             </div>
 
-            {!isSvg && (
+            {(
               <>
                 <p className="text-center text-xs text-muted-foreground">Drag the image to reposition</p>
                 <div className="flex items-center gap-3">
@@ -261,7 +256,7 @@ export function AvatarUploadDialog({
             </div>
 
             <p className="truncate text-xs text-muted-foreground">
-              {file.name} · {(file.size / 1024).toFixed(0)} KB{isSvg && " · SVG is saved as-is"}
+              {file.name} · {(file.size / 1024).toFixed(0)} KB{isSvg && " · converted to PNG"}
             </p>
 
             {error && <p className="text-xs font-semibold text-destructive">{error}</p>}
