@@ -81,6 +81,21 @@ function ShopPage() {
 
   const uploadUnlocked = (me?.max_upload_mb ?? 60) >= 800;
 
+  const vipUntil = (me as { vip_until?: string | null } | undefined)?.vip_until;
+  const vipTier = (me as { vip_tier?: string | null } | undefined)?.vip_tier;
+  const vipMs = vipUntil ? new Date(vipUntil).getTime() : 0;
+  const vipActive = vipMs > now;
+  const vipDaysLeft = Math.max(0, Math.ceil((vipMs - now) / 86400000));
+
+  async function buyVip(tier: "vip" | "elite") {
+    setBusy(true);
+    const { error } = await supabase.rpc("buy_vip" as never, { _tier: tier } as never);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success(tier === "vip" ? "VIP active — +10% Sparks for 3 days" : "VIP Elite active — +300% Sparks for 30 days");
+    qc.invalidateQueries();
+  }
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-2xl px-4 py-6 md:py-10 space-y-6">
@@ -91,6 +106,42 @@ function ShopPage() {
           </div>
           <span className="rounded-full bg-primary/15 px-3 py-1 text-sm font-bold text-primary">💖 {me?.sparks ?? 0}</span>
         </div>
+
+        <div className="rounded-2xl border border-primary/40 bg-card p-5">
+          <div className="flex items-start gap-3">
+            <Crown className="h-6 w-6 shrink-0 text-primary" />
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold">VIP membership</div>
+              <p className="text-xs text-muted-foreground">
+                Earn more Sparks from daily claims, views, likes and generators.
+              </p>
+              {vipActive && (
+                <p className="mt-2 text-xs font-semibold text-primary">
+                  {vipTier === "elite" ? "VIP Elite" : "VIP"} active · {vipDaysLeft} day{vipDaysLeft === 1 ? "" : "s"} left
+                </p>
+              )}
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-border p-3">
+                  <div className="text-sm font-semibold">VIP trial · 3 days</div>
+                  <div className="text-xs text-muted-foreground">100 000 💖 · +10% Sparks</div>
+                  <button onClick={() => buyVip("vip")} disabled={busy || (me?.sparks ?? 0) < 100000}
+                    className="mt-3 w-full rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+                    {vipActive && vipTier === "vip" ? "Extend" : "Buy"}
+                  </button>
+                </div>
+                <div className="rounded-xl border border-primary/50 bg-primary/5 p-3">
+                  <div className="text-sm font-semibold">VIP Elite · 30 days</div>
+                  <div className="text-xs text-muted-foreground">3 000 000 💖 · +300% Sparks</div>
+                  <button onClick={() => buyVip("elite")} disabled={busy || (me?.sparks ?? 0) < 3000000}
+                    className="mt-3 w-full rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+                    {vipActive && vipTier === "elite" ? "Extend" : "Buy"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
 
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex items-start gap-3">
