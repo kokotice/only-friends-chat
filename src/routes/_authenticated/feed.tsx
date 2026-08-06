@@ -343,11 +343,17 @@ const ReelSlide = memo(function ReelSlide({
             // eslint-disable-next-line react/no-unknown-property
             disablePictureInPicture
             onEnded={() => { if (isLast) onEnded(); }}
-            onError={() => setError(true)}
+            onError={handleError}
+            onStalled={handleError}
             className="h-full w-full object-contain"
           />
         ) : error ? (
-          <div className="text-xs text-muted-foreground">Video unavailable</div>
+          <button
+            onClick={(e) => { e.stopPropagation(); retryNow(); }}
+            className="rounded-lg border border-border px-4 py-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            Video failed to load — tap to retry
+          </button>
         ) : (
           <Play className="h-10 w-10 text-muted-foreground animate-pulse" />
         )}
