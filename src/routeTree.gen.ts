@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
+import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
 import { Route as AuthenticatedShopRouteImport } from './routes/_authenticated/shop'
 import { Route as AuthenticatedLiveRouteImport } from './routes/_authenticated/live'
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
@@ -47,6 +48,11 @@ const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
 const AuthenticatedUploadRoute = AuthenticatedUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedStaffRoute = AuthenticatedStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedShopRoute = AuthenticatedShopRouteImport.update({
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/live': typeof AuthenticatedLiveRoute
   '/shop': typeof AuthenticatedShopRoute
+  '/staff': typeof AuthenticatedStaffRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/post/$id': typeof AuthenticatedPostIdRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/live': typeof AuthenticatedLiveRoute
   '/shop': typeof AuthenticatedShopRoute
+  '/staff': typeof AuthenticatedStaffRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/post/$id': typeof AuthenticatedPostIdRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/live': typeof AuthenticatedLiveRoute
   '/_authenticated/shop': typeof AuthenticatedShopRoute
+  '/_authenticated/staff': typeof AuthenticatedStaffRoute
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/post/$id': typeof AuthenticatedPostIdRoute
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/live'
     | '/shop'
+    | '/staff'
     | '/upload'
     | '/wallet'
     | '/post/$id'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/live'
     | '/shop'
+    | '/staff'
     | '/upload'
     | '/wallet'
     | '/post/$id'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leaderboard'
     | '/_authenticated/live'
     | '/_authenticated/shop'
+    | '/_authenticated/staff'
     | '/_authenticated/upload'
     | '/_authenticated/wallet'
     | '/_authenticated/post/$id'
@@ -245,6 +257,13 @@ declare module '@tanstack/react-router' {
       path: '/upload'
       fullPath: '/upload'
       preLoaderRoute: typeof AuthenticatedUploadRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/staff': {
+      id: '/_authenticated/staff'
+      path: '/staff'
+      fullPath: '/staff'
+      preLoaderRoute: typeof AuthenticatedStaffRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/shop': {
@@ -329,6 +348,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedLiveRoute: typeof AuthenticatedLiveRoute
   AuthenticatedShopRoute: typeof AuthenticatedShopRoute
+  AuthenticatedStaffRoute: typeof AuthenticatedStaffRoute
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedPostIdRoute: typeof AuthenticatedPostIdRoute
@@ -344,6 +364,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedLiveRoute: AuthenticatedLiveRoute,
   AuthenticatedShopRoute: AuthenticatedShopRoute,
+  AuthenticatedStaffRoute: AuthenticatedStaffRoute,
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedPostIdRoute: AuthenticatedPostIdRoute,
@@ -361,13 +382,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

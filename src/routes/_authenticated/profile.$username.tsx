@@ -3,8 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile, getProfileByUsername, getSubscriptionStatus } from "@/lib/queries";
 import { UserAvatar } from "@/components/UserAvatar";
+import { ReportDialog } from "@/components/ReportDialog";
 import { toast } from "sonner";
-import { UserPlus, UserMinus, MessageCircle, Users, Sparkles, Zap, Play } from "lucide-react";
+import { UserPlus, UserMinus, MessageCircle, Users, Sparkles, Zap, Play, Flag } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/profile/$username")({
   component: ProfilePage,

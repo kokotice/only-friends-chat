@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { MessageCircle, Video, Radio, Upload, LogOut, Search, Wallet, Dice5, ShoppingBag, Trophy, Package } from "lucide-react";
+import { MessageCircle, Video, Radio, Upload, LogOut, Search, Wallet, Dice5, ShoppingBag, Trophy, Package, Shield } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { applyTheme, getThemes } from "@/lib/theme";
@@ -20,6 +20,7 @@ const NAV = [
   { to: "/crates", label: "Crates", icon: Package },
   { to: "/shop", label: "Shop", icon: ShoppingBag },
   { to: "/wallet", label: "Wallet", icon: Wallet },
+  { to: "/staff", label: "Staff", icon: Shield },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
