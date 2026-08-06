@@ -188,6 +188,7 @@ function FeedPage() {
             near={i - index >= -1 && i - index <= 2}
             isLast={i === posts.length - 1 && !hasNextPage}
             onEnded={restart}
+            onResign={resign}
             onOpenComments={openComments}
             patchPost={patchPost}
             patchAuthor={patchAuthor}
