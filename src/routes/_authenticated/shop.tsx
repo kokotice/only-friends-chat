@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile } from "@/lib/queries";
 import { UserAvatar } from "@/components/UserAvatar";
 import { AvatarUploadDialog } from "@/components/AvatarUploadDialog";
-import { Zap, HardDrive, ImagePlus, ShoppingBag } from "lucide-react";
+import { Zap, HardDrive, ImagePlus, ShoppingBag, Crown } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/shop")({
   component: ShopPage,
