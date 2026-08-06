@@ -411,6 +411,7 @@ export type Database = {
           bio: string | null
           boost_until: string | null
           created_at: string
+          discord_joined_at: string | null
           display_name: string | null
           gen_claimed_at: string | null
           gen_until: string | null
@@ -429,6 +430,7 @@ export type Database = {
           bio?: string | null
           boost_until?: string | null
           created_at?: string
+          discord_joined_at?: string | null
           display_name?: string | null
           gen_claimed_at?: string | null
           gen_until?: string | null
@@ -447,6 +449,7 @@ export type Database = {
           bio?: string | null
           boost_until?: string | null
           created_at?: string
+          discord_joined_at?: string | null
           display_name?: string | null
           gen_claimed_at?: string | null
           gen_until?: string | null
@@ -458,6 +461,80 @@ export type Database = {
           username?: string
           vip_tier?: string | null
           vip_until?: string | null
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          post_id: string | null
+          reason: Database["public"]["Enums"]["report_reason"]
+          reported_user_id: string
+          reporter_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          post_id?: string | null
+          reason: Database["public"]["Enums"]["report_reason"]
+          reported_user_id: string
+          reporter_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          post_id?: string | null
+          reason?: Database["public"]["Enums"]["report_reason"]
+          reported_user_id?: string
+          reporter_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_applications: {
+        Row: {
+          created_at: string
+          discord_tag: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+          why: string
+        }
+        Insert: {
+          created_at?: string
+          discord_tag: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          why: string
+        }
+        Update: {
+          created_at?: string
+          discord_tag?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          why?: string
         }
         Relationships: []
       }
@@ -560,6 +637,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_themes: {
         Row: {
           created_at: string
@@ -606,6 +704,7 @@ export type Database = {
       change_display_name: { Args: { _new: string }; Returns: string }
       change_username: { Args: { _new: string }; Returns: string }
       claim_daily: { Args: never; Returns: number }
+      claim_discord_gift: { Args: never; Returns: Json }
       claim_generator: { Args: never; Returns: number }
       create_group: { Args: { _name: string }; Returns: string }
       create_post: {
@@ -646,6 +745,13 @@ export type Database = {
         Returns: number
       }
       group_buy_seat: { Args: { _group_id: string }; Returns: number }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       increment_post_view: { Args: { p_id: string }; Returns: undefined }
       is_group_member: {
         Args: { _group_id: string; _user_id: string }
@@ -663,6 +769,7 @@ export type Database = {
           bio: string | null
           boost_until: string | null
           created_at: string
+          discord_joined_at: string | null
           display_name: string | null
           gen_claimed_at: string | null
           gen_until: string | null
@@ -684,6 +791,7 @@ export type Database = {
       }
       open_crate: { Args: { _key: string }; Returns: Json }
       record_share: { Args: { _post_id: string }; Returns: number }
+      set_avatar: { Args: { _path: string }; Returns: number }
       theme_perks: {
         Args: { _uid: string }
         Returns: {
@@ -724,7 +832,8 @@ export type Database = {
       upload_cost: { Args: { _bytes: number }; Returns: number }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      report_reason: "racist" | "sexual_abuse" | "underage" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -851,6 +960,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      report_reason: ["racist", "sexual_abuse", "underage", "other"],
+    },
   },
 } as const

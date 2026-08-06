@@ -182,8 +182,8 @@ function ShopPage() {
           <div className="flex items-start gap-3">
             <ImagePlus className="h-6 w-6 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
-              <div className="font-semibold">Profile picture · free</div>
-              <p className="text-xs text-muted-foreground">Replace the default letter avatar with a PNG, JPG or SVG (max 5MB).</p>
+              <div className="font-semibold">Profile picture · 50 💖</div>
+              <p className="text-xs text-muted-foreground">Replace your avatar with a PNG, JPG or SVG (max 5MB). Each change costs 50 💖.</p>
               <div className="mt-3 flex items-center gap-3">
                 <UserAvatar path={me?.avatar_url} name={me?.display_name ?? me?.username ?? "?"} className="h-16 w-16 text-xl" />
                 <div className="flex flex-wrap gap-2">
