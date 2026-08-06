@@ -15,6 +15,7 @@ function ProfilePage() {
   const { username } = Route.useParams();
   const nav = useNavigate();
   const qc = useQueryClient();
+  const [reportOpen, setReportOpen] = useState(false);
   const { data: me } = useQuery({ queryKey: ["my-profile"], queryFn: getMyProfile });
   const { data: profile, isLoading } = useQuery({ queryKey: ["profile", username], queryFn: () => getProfileByUsername(username) });
   const { data: subStatus } = useQuery({
@@ -93,9 +94,15 @@ function ProfilePage() {
                   <MessageCircle className="h-4 w-4" /> Message
                 </button>
               )}
+              <button onClick={() => setReportOpen(true)} className="flex items-center gap-2 rounded-full border border-destructive px-4 py-2 text-sm font-semibold text-destructive">
+                <Flag className="h-4 w-4" /> Report
+              </button>
             </div>
           )}
         </div>
+        {!isMe && profile && (
+          <ReportDialog open={reportOpen} onOpenChange={setReportOpen} reportedUserId={profile.id} username={profile.username} />
+        )}
         <div className="mt-4">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-bold">{profile.display_name ?? profile.username}</h1>
