@@ -344,7 +344,6 @@ const ReelSlide = memo(function ReelSlide({
             disablePictureInPicture
             onEnded={() => { if (isLast) onEnded(); }}
             onError={handleError}
-            onStalled={handleError}
             className="h-full w-full object-contain"
           />
         ) : error ? (
