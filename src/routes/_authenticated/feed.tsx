@@ -227,7 +227,7 @@ function FeedPage() {
 
 const ReelSlide = memo(function ReelSlide({
   post, src, meId, muted, onToggleMute, active, near, isLast, onEnded, onOpenComments, patchPost, patchAuthor,
-  idx, registerSlide,
+  idx, registerSlide, onResign,
 }: {
   post: Post; src?: string; meId?: string; muted: boolean; onToggleMute: () => void;
   active: boolean; near: boolean; isLast: boolean; onEnded: () => void;
@@ -235,11 +235,13 @@ const ReelSlide = memo(function ReelSlide({
   patchPost: (id: string, patch: (p: Post) => Post) => void;
   patchAuthor: (authorId: string, patch: (p: Post) => Post) => void;
   idx: number; registerSlide: (i: number, el: HTMLElement | null) => void;
+  onResign: (path: string) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState(false);
   const signed = src ?? null;
   const viewedRef = useRef(false);
+  const retriesRef = useRef(0);
   const [paused, setPaused] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [subBusy, setSubBusy] = useState(false);
@@ -247,6 +249,24 @@ const ReelSlide = memo(function ReelSlide({
   const isMine = meId === post.author_id;
 
   useEffect(() => { setError(false); }, [src]);
+
+  // A failed load is almost always an expired/failed signed URL — re-sign once
+  // or twice before giving up so slides don't get stuck on "Video unavailable".
+  const handleError = useCallback(() => {
+    if (retriesRef.current < 2) {
+      retriesRef.current += 1;
+      onResign(post.video_url);
+      return;
+    }
+    setError(true);
+  }, [onResign, post.video_url]);
+
+  const retryNow = useCallback(() => {
+    retriesRef.current = 0;
+    setError(false);
+    onResign(post.video_url);
+  }, [onResign, post.video_url]);
+
 
   useEffect(() => {
     if (!active) setPaused(false);
