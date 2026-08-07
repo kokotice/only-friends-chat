@@ -346,7 +346,8 @@ const ReelSlide = memo(function ReelSlide({
             ref={videoRef}
             src={signed}
             loop={!isLast}
-            muted={muted}
+            muted={muted || !active}
+
             playsInline
             preload={active || near ? "auto" : "metadata"}
             // eslint-disable-next-line react/no-unknown-property
