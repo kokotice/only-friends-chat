@@ -789,6 +789,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      my_upload_limit_mb: { Args: never; Returns: number }
       open_crate: { Args: { _key: string }; Returns: Json }
       record_share: { Args: { _post_id: string }; Returns: number }
       set_avatar: { Args: { _path: string }; Returns: number }

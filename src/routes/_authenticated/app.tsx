@@ -42,19 +42,57 @@ function MessagesPage() {
     enabled: !!me,
   });
 
+  // Conversations = mutual friends + anyone you already exchanged DMs with,
+  // sorted by the most recent message so open chats are never hidden.
+  const { data: convos = [] } = useQuery<(Friend & { lastAt: string | null })[]>({
+    queryKey: ["dm-convos", me?.id, friends.map((f) => f.id).join(",")],
+    enabled: !!me,
+    refetchInterval: 5000,
+    queryFn: async () => {
+      const { data: msgs } = await supabase
+        .from("messages")
+        .select("sender_id, recipient_id, created_at")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      const last = new Map<string, string>();
+      for (const m of msgs ?? []) {
+        const peer = m.sender_id === me!.id ? m.recipient_id : m.sender_id;
+        if (peer !== me!.id && !last.has(peer)) last.set(peer, m.created_at);
+      }
+      const known = new Map(friends.map((f) => [f.id, f]));
+      const missing = [...last.keys()].filter((id) => !known.has(id));
+      if (missing.length) {
+        const { data: extra } = await supabase
+          .from("profiles")
+          .select("id, username, display_name, avatar_url")
+          .in("id", missing);
+        for (const p of (extra ?? []) as Friend[]) known.set(p.id, p);
+      }
+      return [...known.values()]
+        .map((f) => ({ ...f, lastAt: last.get(f.id) ?? null }))
+        .sort((a, b) => {
+          if (a.lastAt && b.lastAt) return a.lastAt < b.lastAt ? 1 : -1;
+          if (a.lastAt) return -1;
+          if (b.lastAt) return 1;
+          return (a.display_name ?? a.username).localeCompare(b.display_name ?? b.username);
+        });
+    },
+  });
+
   const [tab, setTab] = useState<"friends" | "groups">("friends");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
 
-  const active = friends.find((f) => f.id === activeId);
+  const active = convos.find((f) => f.id === activeId);
   const activeGroup = groups.find((g) => g.id === activeGroupId);
   const hasOpenChat = tab === "friends" ? !!activeId : !!activeGroupId;
 
   useEffect(() => {
-    if (tab === "friends" && !activeId && friends.length) setActiveId(friends[0]!.id);
-  }, [friends, activeId, tab]);
+    if (tab === "friends" && !activeId && convos.length) setActiveId(convos[0]!.id);
+  }, [convos, activeId, tab]);
+
 
   async function createGroup(e: React.FormEvent) {
     e.preventDefault();
@@ -84,13 +122,13 @@ function MessagesPage() {
         </div>
 
         {tab === "friends" ? (
-          friends.length === 0 ? (
+          convos.length === 0 ? (
             <div className="p-6 text-center text-sm text-muted-foreground">
               No friends yet. <button onClick={() => nav({ to: "/discover" })} className="text-primary hover:underline">Find people</button> to subscribe to.
             </div>
           ) : (
             <div className="overflow-y-auto">
-              {friends.map((f) => (
+              {convos.map((f) => (
                 <button key={f.id} onClick={() => setActiveId(f.id)} className={`flex w-full items-center gap-3 p-3 text-left transition-colors ${activeId === f.id ? "bg-primary/10" : "hover:bg-accent"}`}>
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-primary font-bold shrink-0">
                     {(f.display_name ?? f.username)[0]!.toUpperCase()}
@@ -99,10 +137,16 @@ function MessagesPage() {
                     <div className="truncate text-sm font-medium">{f.display_name ?? f.username}</div>
                     <div className="truncate text-xs text-muted-foreground">@{f.username}</div>
                   </div>
+                  {f.lastAt && (
+                    <span className="shrink-0 text-[10px] text-muted-foreground">
+                      {new Date(f.lastAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
           )
+
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="p-3">

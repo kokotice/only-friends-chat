@@ -275,8 +275,14 @@ const ReelSlide = memo(function ReelSlide({
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
+    let cancelled = false;
     if (active && !paused) {
-      v.play().catch(() => {});
+      // Guard the async play(): if the slide scrolled away before the promise
+      // settled, pause immediately so two videos never play (and overlap) at once.
+      v.play().then(
+        () => { if (cancelled) { v.pause(); v.muted = true; } },
+        () => {},
+      );
       if (!viewedRef.current) {
         viewedRef.current = true;
         supabase.rpc("increment_post_view", { p_id: post.id }).then(() =>
@@ -285,9 +291,12 @@ const ReelSlide = memo(function ReelSlide({
       }
     } else {
       v.pause();
+      v.muted = true;
       if (!active) { try { v.currentTime = 0; } catch { /* noop */ } }
     }
+    return () => { cancelled = true; };
   }, [active, paused, signed, post.id, patchPost]);
+
 
   async function toggleLike() {
     if (!meId) return;
@@ -337,7 +346,8 @@ const ReelSlide = memo(function ReelSlide({
             ref={videoRef}
             src={signed}
             loop={!isLast}
-            muted={muted}
+            muted={muted || !active}
+
             playsInline
             preload={active || near ? "auto" : "metadata"}
             // eslint-disable-next-line react/no-unknown-property
