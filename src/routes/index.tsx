@@ -31,8 +31,8 @@ function Landing() {
           <span className="text-xl font-bold tracking-tight">OnlyFriends</span>
         </div>
         <div className="flex gap-2">
-          <Link to="/auth" className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium hover:bg-accent">Sign in</Link>
-          <Link to="/auth" search={{ mode: "signup" } as never} className="whitespace-nowrap rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground glow-pink">Get started</Link>
+          <Link to="/auth" className="rounded-full px-4 py-2 text-sm font-medium hover:bg-accent">Sign in</Link>
+          <Link to="/auth" search={{ mode: "signup" } as never} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground glow-pink">Get started</Link>
         </div>
       </header>
 
@@ -52,14 +52,6 @@ function Landing() {
               Create your account
             </Link>
             <Link to="/auth" className="rounded-full border border-border px-6 py-3 font-semibold hover:bg-accent">Sign in</Link>
-            <a
-              href="https://discord.gg/wVSv5sT3dB"
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-full border border-primary/40 px-6 py-3 font-semibold text-primary hover:bg-primary/10"
-            >
-              Join our Discord
-            </a>
           </div>
         </div>
 
@@ -77,12 +69,6 @@ function Landing() {
             </div>
           ))}
         </div>
-        <footer className="mt-20 border-t border-border pt-8 pb-10 text-center text-sm text-muted-foreground">
-          Questions, bugs or drama?{" "}
-          <a href="https://discord.gg/wVSv5sT3dB" target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">
-            Join the OnlyFriends Discord
-          </a>
-        </footer>
       </main>
     </div>
   );

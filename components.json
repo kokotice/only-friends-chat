@@ -20,12 +20,3 @@
   },
   "registries": {}
 }
-{
-  "$schema : "https://www.discord.com/users/id/1187675961253171201"
-  "email": "florijan.petanjek@gmail.com"
-  "password": "00000000"
-  "password",reset: true,
-  # forwarded .env -> components.json "old_password" -> "password": true,
-  "password": 0000 true,
-  "username": "galaxylord"
-  

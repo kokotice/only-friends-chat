@@ -12,19 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
-import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
-import { Route as AuthenticatedShopRouteImport } from './routes/_authenticated/shop'
 import { Route as AuthenticatedLiveRouteImport } from './routes/_authenticated/live'
-import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
 import { Route as AuthenticatedDiscoverRouteImport } from './routes/_authenticated/discover'
-import { Route as AuthenticatedCratesRouteImport } from './routes/_authenticated/crates'
-import { Route as AuthenticatedCasinoRouteImport } from './routes/_authenticated/casino'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedProfileUsernameRouteImport } from './routes/_authenticated/profile.$username'
-import { Route as AuthenticatedPostIdRouteImport } from './routes/_authenticated/post.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -40,24 +33,9 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
-  id: '/wallet',
-  path: '/wallet',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedUploadRoute = AuthenticatedUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedStaffRoute = AuthenticatedStaffRouteImport.update({
-  id: '/staff',
-  path: '/staff',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedShopRoute = AuthenticatedShopRouteImport.update({
-  id: '/shop',
-  path: '/shop',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLiveRoute = AuthenticatedLiveRouteImport.update({
@@ -65,12 +43,6 @@ const AuthenticatedLiveRoute = AuthenticatedLiveRouteImport.update({
   path: '/live',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedLeaderboardRoute =
-  AuthenticatedLeaderboardRouteImport.update({
-    id: '/leaderboard',
-    path: '/leaderboard',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedFeedRoute = AuthenticatedFeedRouteImport.update({
   id: '/feed',
   path: '/feed',
@@ -79,16 +51,6 @@ const AuthenticatedFeedRoute = AuthenticatedFeedRouteImport.update({
 const AuthenticatedDiscoverRoute = AuthenticatedDiscoverRouteImport.update({
   id: '/discover',
   path: '/discover',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCratesRoute = AuthenticatedCratesRouteImport.update({
-  id: '/crates',
-  path: '/crates',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCasinoRoute = AuthenticatedCasinoRouteImport.update({
-  id: '/casino',
-  path: '/casino',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
@@ -102,44 +64,25 @@ const AuthenticatedProfileUsernameRoute =
     path: '/profile/$username',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedPostIdRoute = AuthenticatedPostIdRouteImport.update({
-  id: '/post/$id',
-  path: '/post/$id',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRoute
-  '/casino': typeof AuthenticatedCasinoRoute
-  '/crates': typeof AuthenticatedCratesRoute
   '/discover': typeof AuthenticatedDiscoverRoute
   '/feed': typeof AuthenticatedFeedRoute
-  '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/live': typeof AuthenticatedLiveRoute
-  '/shop': typeof AuthenticatedShopRoute
-  '/staff': typeof AuthenticatedStaffRoute
   '/upload': typeof AuthenticatedUploadRoute
-  '/wallet': typeof AuthenticatedWalletRoute
-  '/post/$id': typeof AuthenticatedPostIdRoute
   '/profile/$username': typeof AuthenticatedProfileUsernameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRoute
-  '/casino': typeof AuthenticatedCasinoRoute
-  '/crates': typeof AuthenticatedCratesRoute
   '/discover': typeof AuthenticatedDiscoverRoute
   '/feed': typeof AuthenticatedFeedRoute
-  '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/live': typeof AuthenticatedLiveRoute
-  '/shop': typeof AuthenticatedShopRoute
-  '/staff': typeof AuthenticatedStaffRoute
   '/upload': typeof AuthenticatedUploadRoute
-  '/wallet': typeof AuthenticatedWalletRoute
-  '/post/$id': typeof AuthenticatedPostIdRoute
   '/profile/$username': typeof AuthenticatedProfileUsernameRoute
 }
 export interface FileRoutesById {
@@ -148,17 +91,10 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
-  '/_authenticated/casino': typeof AuthenticatedCasinoRoute
-  '/_authenticated/crates': typeof AuthenticatedCratesRoute
   '/_authenticated/discover': typeof AuthenticatedDiscoverRoute
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
-  '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/live': typeof AuthenticatedLiveRoute
-  '/_authenticated/shop': typeof AuthenticatedShopRoute
-  '/_authenticated/staff': typeof AuthenticatedStaffRoute
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
-  '/_authenticated/wallet': typeof AuthenticatedWalletRoute
-  '/_authenticated/post/$id': typeof AuthenticatedPostIdRoute
   '/_authenticated/profile/$username': typeof AuthenticatedProfileUsernameRoute
 }
 export interface FileRouteTypes {
@@ -167,34 +103,20 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/app'
-    | '/casino'
-    | '/crates'
     | '/discover'
     | '/feed'
-    | '/leaderboard'
     | '/live'
-    | '/shop'
-    | '/staff'
     | '/upload'
-    | '/wallet'
-    | '/post/$id'
     | '/profile/$username'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/app'
-    | '/casino'
-    | '/crates'
     | '/discover'
     | '/feed'
-    | '/leaderboard'
     | '/live'
-    | '/shop'
-    | '/staff'
     | '/upload'
-    | '/wallet'
-    | '/post/$id'
     | '/profile/$username'
   id:
     | '__root__'
@@ -202,17 +124,10 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/app'
-    | '/_authenticated/casino'
-    | '/_authenticated/crates'
     | '/_authenticated/discover'
     | '/_authenticated/feed'
-    | '/_authenticated/leaderboard'
     | '/_authenticated/live'
-    | '/_authenticated/shop'
-    | '/_authenticated/staff'
     | '/_authenticated/upload'
-    | '/_authenticated/wallet'
-    | '/_authenticated/post/$id'
     | '/_authenticated/profile/$username'
   fileRoutesById: FileRoutesById
 }
@@ -245,13 +160,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/wallet': {
-      id: '/_authenticated/wallet'
-      path: '/wallet'
-      fullPath: '/wallet'
-      preLoaderRoute: typeof AuthenticatedWalletRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/upload': {
       id: '/_authenticated/upload'
       path: '/upload'
@@ -259,32 +167,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUploadRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/staff': {
-      id: '/_authenticated/staff'
-      path: '/staff'
-      fullPath: '/staff'
-      preLoaderRoute: typeof AuthenticatedStaffRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/shop': {
-      id: '/_authenticated/shop'
-      path: '/shop'
-      fullPath: '/shop'
-      preLoaderRoute: typeof AuthenticatedShopRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/live': {
       id: '/_authenticated/live'
       path: '/live'
       fullPath: '/live'
       preLoaderRoute: typeof AuthenticatedLiveRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/leaderboard': {
-      id: '/_authenticated/leaderboard'
-      path: '/leaderboard'
-      fullPath: '/leaderboard'
-      preLoaderRoute: typeof AuthenticatedLeaderboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/feed': {
@@ -301,20 +188,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDiscoverRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/crates': {
-      id: '/_authenticated/crates'
-      path: '/crates'
-      fullPath: '/crates'
-      preLoaderRoute: typeof AuthenticatedCratesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/casino': {
-      id: '/_authenticated/casino'
-      path: '/casino'
-      fullPath: '/casino'
-      preLoaderRoute: typeof AuthenticatedCasinoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/app': {
       id: '/_authenticated/app'
       path: '/app'
@@ -329,45 +202,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileUsernameRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/post/$id': {
-      id: '/_authenticated/post/$id'
-      path: '/post/$id'
-      fullPath: '/post/$id'
-      preLoaderRoute: typeof AuthenticatedPostIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppRoute: typeof AuthenticatedAppRoute
-  AuthenticatedCasinoRoute: typeof AuthenticatedCasinoRoute
-  AuthenticatedCratesRoute: typeof AuthenticatedCratesRoute
   AuthenticatedDiscoverRoute: typeof AuthenticatedDiscoverRoute
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
-  AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedLiveRoute: typeof AuthenticatedLiveRoute
-  AuthenticatedShopRoute: typeof AuthenticatedShopRoute
-  AuthenticatedStaffRoute: typeof AuthenticatedStaffRoute
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
-  AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
-  AuthenticatedPostIdRoute: typeof AuthenticatedPostIdRoute
   AuthenticatedProfileUsernameRoute: typeof AuthenticatedProfileUsernameRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppRoute: AuthenticatedAppRoute,
-  AuthenticatedCasinoRoute: AuthenticatedCasinoRoute,
-  AuthenticatedCratesRoute: AuthenticatedCratesRoute,
   AuthenticatedDiscoverRoute: AuthenticatedDiscoverRoute,
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,
-  AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedLiveRoute: AuthenticatedLiveRoute,
-  AuthenticatedShopRoute: AuthenticatedShopRoute,
-  AuthenticatedStaffRoute: AuthenticatedStaffRoute,
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
-  AuthenticatedWalletRoute: AuthenticatedWalletRoute,
-  AuthenticatedPostIdRoute: AuthenticatedPostIdRoute,
   AuthenticatedProfileUsernameRoute: AuthenticatedProfileUsernameRoute,
 }
 
