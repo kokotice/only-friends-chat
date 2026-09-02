@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
+import { Route as AuthenticatedWalkRouteImport } from './routes/_authenticated/walk'
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
 import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
 import { Route as AuthenticatedShopRouteImport } from './routes/_authenticated/shop'
@@ -43,6 +44,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedWalkRoute = AuthenticatedWalkRouteImport.update({
+  id: '/walk',
+  path: '/walk',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedUploadRoute = AuthenticatedUploadRouteImport.update({
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/shop': typeof AuthenticatedShopRoute
   '/staff': typeof AuthenticatedStaffRoute
   '/upload': typeof AuthenticatedUploadRoute
+  '/walk': typeof AuthenticatedWalkRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/post/$id': typeof AuthenticatedPostIdRoute
   '/profile/$username': typeof AuthenticatedProfileUsernameRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByTo {
   '/shop': typeof AuthenticatedShopRoute
   '/staff': typeof AuthenticatedStaffRoute
   '/upload': typeof AuthenticatedUploadRoute
+  '/walk': typeof AuthenticatedWalkRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/post/$id': typeof AuthenticatedPostIdRoute
   '/profile/$username': typeof AuthenticatedProfileUsernameRoute
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/_authenticated/shop': typeof AuthenticatedShopRoute
   '/_authenticated/staff': typeof AuthenticatedStaffRoute
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
+  '/_authenticated/walk': typeof AuthenticatedWalkRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/post/$id': typeof AuthenticatedPostIdRoute
   '/_authenticated/profile/$username': typeof AuthenticatedProfileUsernameRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/staff'
     | '/upload'
+    | '/walk'
     | '/wallet'
     | '/post/$id'
     | '/profile/$username'
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/staff'
     | '/upload'
+    | '/walk'
     | '/wallet'
     | '/post/$id'
     | '/profile/$username'
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/_authenticated/shop'
     | '/_authenticated/staff'
     | '/_authenticated/upload'
+    | '/_authenticated/walk'
     | '/_authenticated/wallet'
     | '/_authenticated/post/$id'
     | '/_authenticated/profile/$username'
@@ -250,6 +262,13 @@ declare module '@tanstack/react-router' {
       path: '/wallet'
       fullPath: '/wallet'
       preLoaderRoute: typeof AuthenticatedWalletRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/walk': {
+      id: '/_authenticated/walk'
+      path: '/walk'
+      fullPath: '/walk'
+      preLoaderRoute: typeof AuthenticatedWalkRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/upload': {
@@ -350,6 +369,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedShopRoute: typeof AuthenticatedShopRoute
   AuthenticatedStaffRoute: typeof AuthenticatedStaffRoute
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
+  AuthenticatedWalkRoute: typeof AuthenticatedWalkRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedPostIdRoute: typeof AuthenticatedPostIdRoute
   AuthenticatedProfileUsernameRoute: typeof AuthenticatedProfileUsernameRoute
@@ -366,6 +386,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedShopRoute: AuthenticatedShopRoute,
   AuthenticatedStaffRoute: AuthenticatedStaffRoute,
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
+  AuthenticatedWalkRoute: AuthenticatedWalkRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedPostIdRoute: AuthenticatedPostIdRoute,
   AuthenticatedProfileUsernameRoute: AuthenticatedProfileUsernameRoute,
@@ -382,3 +403,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

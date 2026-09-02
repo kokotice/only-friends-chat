@@ -46,6 +46,44 @@ function FeedPage() {
 
   const posts = useMemo(() => data?.pages.flat() ?? [], [data]);
 
+  // Watch fee: 50 💖 the first time you see a post, free forever afterwards.
+  const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
+  const [payErrors, setPayErrors] = useState<Record<string, string>>({});
+  const checkedIds = useRef(new Set<string>());
+
+  useEffect(() => {
+    const ids = posts.map((p) => p.id).filter((id) => !checkedIds.current.has(id));
+    if (ids.length === 0) return;
+    ids.forEach((id) => checkedIds.current.add(id));
+    supabase.rpc("my_watched_posts", { _ids: ids }).then(({ data }) => {
+      const rows = (data ?? []) as { post_id: string }[];
+      if (rows.length === 0) return;
+      setUnlockedIds((prev) => {
+        const next = new Set(prev);
+        rows.forEach((r) => next.add(r.post_id));
+        return next;
+      });
+    });
+  }, [posts]);
+
+  const onWatch = useCallback(async (id: string) => {
+    const { data, error } = await supabase.rpc("watch_post", { p_id: id });
+    if (error) {
+      setPayErrors((prev) => ({ ...prev, [id]: error.message }));
+      return;
+    }
+    setPayErrors((prev) => { const n = { ...prev }; delete n[id]; return n; });
+    setUnlockedIds((prev) => new Set(prev).add(id));
+    const r = data as { charged: boolean } | null;
+    if (r?.charged) {
+      qc.setQueryData<InfiniteData<Post[]>>(["feed"], (old) =>
+        old ? { ...old, pages: old.pages.map((pg) => pg.map((p) => (p.id === id ? { ...p, view_count: p.view_count + 1 } : p))) } : old,
+      );
+      qc.invalidateQueries({ queryKey: ["my-profile"] });
+    }
+  }, [qc]);
+
+
   // Batch-sign URLs for a window of upcoming posts in ONE request so the next
   // videos are already resolvable before they scroll into view.
   const [urls, setUrls] = useState<Record<string, string>>({});
@@ -192,7 +230,11 @@ function FeedPage() {
             onOpenComments={openComments}
             patchPost={patchPost}
             patchAuthor={patchAuthor}
+            unlocked={unlockedIds.has(p.id)}
+            onWatch={onWatch}
+            payError={payErrors[p.id]}
           />
+
         ))}
 
         {isFetchingNextPage && (
@@ -227,7 +269,7 @@ function FeedPage() {
 
 const ReelSlide = memo(function ReelSlide({
   post, src, meId, muted, onToggleMute, active, near, isLast, onEnded, onOpenComments, patchPost, patchAuthor,
-  idx, registerSlide, onResign,
+  idx, registerSlide, onResign, unlocked, onWatch, payError,
 }: {
   post: Post; src?: string; meId?: string; muted: boolean; onToggleMute: () => void;
   active: boolean; near: boolean; isLast: boolean; onEnded: () => void;
@@ -236,12 +278,14 @@ const ReelSlide = memo(function ReelSlide({
   patchAuthor: (authorId: string, patch: (p: Post) => Post) => void;
   idx: number; registerSlide: (i: number, el: HTMLElement | null) => void;
   onResign: (path: string) => void;
+  unlocked: boolean; onWatch: (id: string) => Promise<void>; payError?: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState(false);
   const signed = src ?? null;
-  const viewedRef = useRef(false);
+  const payingRef = useRef(false);
   const retriesRef = useRef(0);
+
   const [paused, setPaused] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [subBusy, setSubBusy] = useState(false);
@@ -276,26 +320,28 @@ const ReelSlide = memo(function ReelSlide({
     const v = videoRef.current;
     if (!v) return;
     let cancelled = false;
-    if (active && !paused) {
+    if (active && !paused && unlocked) {
       // Guard the async play(): if the slide scrolled away before the promise
       // settled, pause immediately so two videos never play (and overlap) at once.
       v.play().then(
         () => { if (cancelled) { v.pause(); v.muted = true; } },
         () => {},
       );
-      if (!viewedRef.current) {
-        viewedRef.current = true;
-        supabase.rpc("increment_post_view", { p_id: post.id }).then(() =>
-          patchPost(post.id, (p) => ({ ...p, view_count: p.view_count + 1 })),
-        );
-      }
     } else {
       v.pause();
       v.muted = true;
       if (!active) { try { v.currentTime = 0; } catch { /* noop */ } }
     }
     return () => { cancelled = true; };
-  }, [active, paused, signed, post.id, patchPost]);
+  }, [active, paused, signed, unlocked]);
+
+  // Charge the 50 💖 watch fee once per post — after that it's unlocked forever.
+  useEffect(() => {
+    if (!active || unlocked || payingRef.current) return;
+    payingRef.current = true;
+    onWatch(post.id).finally(() => { payingRef.current = false; });
+  }, [active, unlocked, onWatch, post.id]);
+
 
 
   async function toggleLike() {
@@ -346,7 +392,7 @@ const ReelSlide = memo(function ReelSlide({
             ref={videoRef}
             src={signed}
             loop={!isLast}
-            muted={muted || !active}
+            muted={muted || !active || !unlocked}
 
             playsInline
             preload={active || near ? "auto" : "metadata"}
@@ -354,8 +400,9 @@ const ReelSlide = memo(function ReelSlide({
             disablePictureInPicture
             onEnded={() => { if (isLast) onEnded(); }}
             onError={handleError}
-            className="h-full w-full object-contain"
+            className={`h-full w-full object-contain ${unlocked ? "" : "blur-2xl scale-105 opacity-60"}`}
           />
+
         ) : error ? (
           <button
             onClick={(e) => { e.stopPropagation(); retryNow(); }}
@@ -366,11 +413,33 @@ const ReelSlide = memo(function ReelSlide({
         ) : (
           <Play className="h-10 w-10 text-muted-foreground animate-pulse" />
         )}
-        {paused && signed && !error && (
+        {paused && signed && !error && unlocked && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
             <Play className="h-16 w-16 text-white/80" fill="currentColor" />
           </div>
         )}
+        {!unlocked && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 px-8 text-center text-white">
+            {payError ? (
+              <>
+                <p className="text-sm font-semibold">Not enough Sparks</p>
+                <p className="text-xs text-white/70">Each new video costs 50 💖. Walk on your phone to earn more.</p>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onWatch(post.id); }}
+                  className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
+                >
+                  Try again — 50 💖
+                </button>
+              </>
+            ) : (
+              <>
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <p className="text-xs text-white/70">Unlocking for 50 💖…</p>
+              </>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* Bottom gradient + caption */}
