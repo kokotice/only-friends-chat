@@ -227,7 +227,7 @@ function FeedPage() {
 
 const ReelSlide = memo(function ReelSlide({
   post, src, meId, muted, onToggleMute, active, near, isLast, onEnded, onOpenComments, patchPost, patchAuthor,
-  idx, registerSlide, onResign,
+  idx, registerSlide, onResign, unlocked, onWatch, payError,
 }: {
   post: Post; src?: string; meId?: string; muted: boolean; onToggleMute: () => void;
   active: boolean; near: boolean; isLast: boolean; onEnded: () => void;
@@ -236,12 +236,14 @@ const ReelSlide = memo(function ReelSlide({
   patchAuthor: (authorId: string, patch: (p: Post) => Post) => void;
   idx: number; registerSlide: (i: number, el: HTMLElement | null) => void;
   onResign: (path: string) => void;
+  unlocked: boolean; onWatch: (id: string) => Promise<void>; payError?: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState(false);
   const signed = src ?? null;
-  const viewedRef = useRef(false);
+  const payingRef = useRef(false);
   const retriesRef = useRef(0);
+
   const [paused, setPaused] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [subBusy, setSubBusy] = useState(false);
