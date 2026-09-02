@@ -276,26 +276,28 @@ const ReelSlide = memo(function ReelSlide({
     const v = videoRef.current;
     if (!v) return;
     let cancelled = false;
-    if (active && !paused) {
+    if (active && !paused && unlocked) {
       // Guard the async play(): if the slide scrolled away before the promise
       // settled, pause immediately so two videos never play (and overlap) at once.
       v.play().then(
         () => { if (cancelled) { v.pause(); v.muted = true; } },
         () => {},
       );
-      if (!viewedRef.current) {
-        viewedRef.current = true;
-        supabase.rpc("increment_post_view", { p_id: post.id }).then(() =>
-          patchPost(post.id, (p) => ({ ...p, view_count: p.view_count + 1 })),
-        );
-      }
     } else {
       v.pause();
       v.muted = true;
       if (!active) { try { v.currentTime = 0; } catch { /* noop */ } }
     }
     return () => { cancelled = true; };
-  }, [active, paused, signed, post.id, patchPost]);
+  }, [active, paused, signed, unlocked]);
+
+  // Charge the 50 💖 watch fee once per post — after that it's unlocked forever.
+  useEffect(() => {
+    if (!active || unlocked || payingRef.current) return;
+    payingRef.current = true;
+    onWatch(post.id).finally(() => { payingRef.current = false; });
+  }, [active, unlocked, onWatch, post.id]);
+
 
 
   async function toggleLike() {
