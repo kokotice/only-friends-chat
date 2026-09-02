@@ -410,6 +410,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           boost_until: string | null
+          casino_unlocked: boolean
           created_at: string
           discord_joined_at: string | null
           display_name: string | null
@@ -420,6 +421,7 @@ export type Database = {
           last_daily_at: string | null
           max_upload_mb: number
           sparks: number
+          steps_total: number
           username: string
           vip_tier: string | null
           vip_until: string | null
@@ -429,6 +431,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           boost_until?: string | null
+          casino_unlocked?: boolean
           created_at?: string
           discord_joined_at?: string | null
           display_name?: string | null
@@ -439,6 +442,7 @@ export type Database = {
           last_daily_at?: string | null
           max_upload_mb?: number
           sparks?: number
+          steps_total?: number
           username: string
           vip_tier?: string | null
           vip_until?: string | null
@@ -448,6 +452,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           boost_until?: string | null
+          casino_unlocked?: boolean
           created_at?: string
           discord_joined_at?: string | null
           display_name?: string | null
@@ -458,6 +463,7 @@ export type Database = {
           last_daily_at?: string | null
           max_upload_mb?: number
           sparks?: number
+          steps_total?: number
           username?: string
           vip_tier?: string | null
           vip_until?: string | null
@@ -768,6 +774,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           boost_until: string | null
+          casino_unlocked: boolean
           created_at: string
           discord_joined_at: string | null
           display_name: string | null
@@ -778,6 +785,7 @@ export type Database = {
           last_daily_at: string | null
           max_upload_mb: number
           sparks: number
+          steps_total: number
           username: string
           vip_tier: string | null
           vip_until: string | null
@@ -790,8 +798,15 @@ export type Database = {
         }
       }
       my_upload_limit_mb: { Args: never; Returns: number }
+      my_watched_posts: {
+        Args: { _ids: string[] }
+        Returns: {
+          post_id: string
+        }[]
+      }
       open_crate: { Args: { _key: string }; Returns: Json }
       record_share: { Args: { _post_id: string }; Returns: number }
+      record_steps: { Args: { _n: number }; Returns: Json }
       set_avatar: { Args: { _path: string }; Returns: number }
       theme_perks: {
         Args: { _uid: string }
@@ -830,7 +845,9 @@ export type Database = {
           view_count: number
         }[]
       }
+      unlock_casino: { Args: { _platform?: string }; Returns: Json }
       upload_cost: { Args: { _bytes: number }; Returns: number }
+      watch_post: { Args: { p_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
