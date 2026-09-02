@@ -16,7 +16,9 @@ const NAV = [
   { to: "/discover", label: "Find", icon: Search },
   { to: "/upload", label: "Post", icon: Upload },
   { to: "/leaderboard", label: "Ranks", icon: Trophy },
+  { to: "/walk", label: "Walk", icon: Footprints },
   { to: "/casino", label: "Casino", icon: Dice5 },
+
   { to: "/crates", label: "Crates", icon: Package },
   { to: "/shop", label: "Shop", icon: ShoppingBag },
   { to: "/wallet", label: "Wallet", icon: Wallet },
