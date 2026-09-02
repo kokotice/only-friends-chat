@@ -110,7 +110,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 flex border-t border-sidebar-border bg-sidebar/95 backdrop-blur">
-        {NAV.slice(0, 5).map((n) => {
+        {["/app", "/feed", "/walk", "/discover", "/upload"].map((to) => NAV.find((n) => n.to === to)!).map((n) => {
           const active = path.startsWith(n.to);
           return (
             <Link key={n.to} to={n.to} className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] ${active ? "text-primary" : "text-muted-foreground"}`}>
