@@ -230,7 +230,11 @@ function FeedPage() {
             onOpenComments={openComments}
             patchPost={patchPost}
             patchAuthor={patchAuthor}
+            unlocked={unlockedIds.has(p.id)}
+            onWatch={onWatch}
+            payError={payErrors[p.id]}
           />
+
         ))}
 
         {isFetchingNextPage && (
