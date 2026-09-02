@@ -413,11 +413,33 @@ const ReelSlide = memo(function ReelSlide({
         ) : (
           <Play className="h-10 w-10 text-muted-foreground animate-pulse" />
         )}
-        {paused && signed && !error && (
+        {paused && signed && !error && unlocked && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
             <Play className="h-16 w-16 text-white/80" fill="currentColor" />
           </div>
         )}
+        {!unlocked && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/60 px-8 text-center text-white">
+            {payError ? (
+              <>
+                <p className="text-sm font-semibold">Not enough Sparks</p>
+                <p className="text-xs text-white/70">Each new video costs 50 💖. Walk on your phone to earn more.</p>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onWatch(post.id); }}
+                  className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
+                >
+                  Try again — 50 💖
+                </button>
+              </>
+            ) : (
+              <>
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <p className="text-xs text-white/70">Unlocking for 50 💖…</p>
+              </>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* Bottom gradient + caption */}
