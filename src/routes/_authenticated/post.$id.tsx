@@ -92,9 +92,18 @@ function PostPage() {
   function onPlay() {
     if (!viewed && post) {
       setViewed(true);
-      supabase.rpc("increment_post_view", { p_id: post.id });
+      // First watch costs 50 💖; after that this post is free forever.
+      supabase.rpc("watch_post", { p_id: post.id }).then(({ data, error }) => {
+        if (error) return toast.error(error.message);
+        const r = data as { charged: boolean } | null;
+        if (r?.charged) {
+          toast.success("Unlocked for 50 💖 — free from now on");
+          qc.invalidateQueries({ queryKey: ["my-profile"] });
+        }
+      });
     }
   }
+
 
   async function submitComment(e: React.FormEvent) {
     e.preventDefault();
