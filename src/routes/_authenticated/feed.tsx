@@ -46,6 +46,44 @@ function FeedPage() {
 
   const posts = useMemo(() => data?.pages.flat() ?? [], [data]);
 
+  // Watch fee: 50 💖 the first time you see a post, free forever afterwards.
+  const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
+  const [payErrors, setPayErrors] = useState<Record<string, string>>({});
+  const checkedIds = useRef(new Set<string>());
+
+  useEffect(() => {
+    const ids = posts.map((p) => p.id).filter((id) => !checkedIds.current.has(id));
+    if (ids.length === 0) return;
+    ids.forEach((id) => checkedIds.current.add(id));
+    supabase.rpc("my_watched_posts", { _ids: ids }).then(({ data }) => {
+      const rows = (data ?? []) as { post_id: string }[];
+      if (rows.length === 0) return;
+      setUnlockedIds((prev) => {
+        const next = new Set(prev);
+        rows.forEach((r) => next.add(r.post_id));
+        return next;
+      });
+    });
+  }, [posts]);
+
+  const onWatch = useCallback(async (id: string) => {
+    const { data, error } = await supabase.rpc("watch_post", { p_id: id });
+    if (error) {
+      setPayErrors((prev) => ({ ...prev, [id]: error.message }));
+      return;
+    }
+    setPayErrors((prev) => { const n = { ...prev }; delete n[id]; return n; });
+    setUnlockedIds((prev) => new Set(prev).add(id));
+    const r = data as { charged: boolean } | null;
+    if (r?.charged) {
+      qc.setQueryData<InfiniteData<Post[]>>(["feed"], (old) =>
+        old ? { ...old, pages: old.pages.map((pg) => pg.map((p) => (p.id === id ? { ...p, view_count: p.view_count + 1 } : p))) } : old,
+      );
+      qc.invalidateQueries({ queryKey: ["my-profile"] });
+    }
+  }, [qc]);
+
+
   // Batch-sign URLs for a window of upcoming posts in ONE request so the next
   // videos are already resolvable before they scroll into view.
   const [urls, setUrls] = useState<Record<string, string>>({});
