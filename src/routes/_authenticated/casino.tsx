@@ -15,12 +15,62 @@ function CasinoPage() {
   const balance = me?.sparks ?? 0;
   const [until, setUntil] = useState(0);
   const [now, setNow] = useState(() => Date.now());
+  const [unlocking, setUnlocking] = useState(false);
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(t);
   }, []);
   const cooldown = Math.max(0, Math.ceil((until - now) / 1000));
   const startCooldown = () => setUntil(Date.now() + 10_000);
+
+  const isPhone = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+  const platform = isPhone ? "mobile" : "pc";
+  const cost = isPhone ? 150000 : 30000;
+  const steps = me?.steps_total ?? 0;
+
+  async function unlock() {
+    setUnlocking(true);
+    const { data, error } = await supabase.rpc("unlock_casino", { _platform: platform });
+    setUnlocking(false);
+    if (error) return toast.error(error.message);
+    const r = data as { via?: string } | null;
+    toast.success(r?.via === "steps" ? "Casino unlocked with your steps 🎰" : "Casino unlocked 🎰");
+    qc.invalidateQueries({ queryKey: ["my-profile"] });
+  }
+
+  if (me && !me.casino_unlocked) {
+    return (
+      <div className="h-full overflow-y-auto">
+        <div className="mx-auto max-w-lg px-4 py-10 space-y-5 text-center">
+          <h1 className="text-2xl md:text-3xl font-black">🎰 Casino is locked</h1>
+          <p className="text-sm text-muted-foreground">
+            Unlock it for {cost.toLocaleString()} 💖 on {isPhone ? "phone" : "PC"} — or walk 10 000 steps and get it free.
+          </p>
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span>Your steps</span>
+              <span className="font-bold text-primary">{steps.toLocaleString()} / 10 000</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-muted">
+              <div className="h-full bg-primary" style={{ width: `${Math.min(100, (steps / 10000) * 100)}%` }} />
+            </div>
+            <div className="flex items-center justify-between text-sm pt-2">
+              <span>Your balance</span>
+              <span className="font-bold text-primary">💖 {balance}</span>
+            </div>
+          </div>
+          <button
+            onClick={unlock}
+            disabled={unlocking || (steps < 10000 && balance < cost)}
+            className="w-full rounded-xl bg-primary py-3 font-bold text-primary-foreground disabled:opacity-50"
+          >
+            {steps >= 10000 ? "Claim free unlock" : `Unlock for ${cost.toLocaleString()} 💖`}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="h-full overflow-y-auto">
