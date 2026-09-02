@@ -392,7 +392,7 @@ const ReelSlide = memo(function ReelSlide({
             ref={videoRef}
             src={signed}
             loop={!isLast}
-            muted={muted || !active}
+            muted={muted || !active || !unlocked}
 
             playsInline
             preload={active || near ? "auto" : "metadata"}
@@ -400,8 +400,9 @@ const ReelSlide = memo(function ReelSlide({
             disablePictureInPicture
             onEnded={() => { if (isLast) onEnded(); }}
             onError={handleError}
-            className="h-full w-full object-contain"
+            className={`h-full w-full object-contain ${unlocked ? "" : "blur-2xl scale-105 opacity-60"}`}
           />
+
         ) : error ? (
           <button
             onClick={(e) => { e.stopPropagation(); retryNow(); }}
