@@ -8,6 +8,8 @@ import { getMyProfile } from "@/lib/queries";
 import logo from "@/assets/logo.png";
 import { UserAvatar } from "@/components/UserAvatar";
 import { toast } from "sonner";
+import { StepTrackerProvider, useStepTracker } from "@/hooks/useStepTracker";
+
 
 const NAV = [
   { to: "/app", label: "Chats", icon: MessageCircle },
@@ -26,10 +28,33 @@ const NAV = [
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <StepTrackerProvider>
+      <AppShellInner>{children}</AppShellInner>
+    </StepTrackerProvider>
+  );
+}
+
+function WalkBadge() {
+  const { tracking, session, earned } = useStepTracker();
+  if (!tracking) return null;
+  return (
+    <Link
+      to="/walk"
+      className="flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-xs font-bold text-primary"
+    >
+      <Footprints className="h-3.5 w-3.5 animate-pulse" />
+      {session} · +{earned}
+    </Link>
+  );
+}
+
+function AppShellInner({ children }: { children: React.ReactNode }) {
   const nav = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { data: profile } = useQuery({ queryKey: ["my-profile"], queryFn: getMyProfile });
   const { data: themes } = useQuery({ queryKey: ["themes"], queryFn: getThemes, staleTime: Infinity });
+
 
   // Apply the equipped theme's tokens to the document.
   const activeKey = profile?.active_theme;
@@ -99,12 +124,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <img src={logo} alt="" className="h-7 w-7" />
           <span className="font-bold">OnlyFriends</span>
         </Link>
-        {profile && (
-          <Link to="/wallet" className="rounded-full bg-primary/15 px-3 py-1 text-sm font-bold text-primary">
-            💖 {profile.sparks ?? 0}
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          <WalkBadge />
+          {profile && (
+            <Link to="/wallet" className="rounded-full bg-primary/15 px-3 py-1 text-sm font-bold text-primary">
+              💖 {profile.sparks ?? 0}
+            </Link>
+          )}
+        </div>
       </header>
+
 
       <main className="flex-1 overflow-hidden pb-16 md:pb-0">{children}</main>
 
