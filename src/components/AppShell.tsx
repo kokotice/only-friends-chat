@@ -124,7 +124,10 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
           <img src={logo} alt="" className="h-7 w-7" />
           <span className="font-bold">OnlyFriends</span>
         </Link>
+        <div className="flex items-center gap-2">
+        <WalkBadge />
         {profile && (
+
           <Link to="/wallet" className="rounded-full bg-primary/15 px-3 py-1 text-sm font-bold text-primary">
             💖 {profile.sparks ?? 0}
           </Link>
