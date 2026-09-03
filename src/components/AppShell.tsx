@@ -26,10 +26,33 @@ const NAV = [
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <StepTrackerProvider>
+      <AppShellInner>{children}</AppShellInner>
+    </StepTrackerProvider>
+  );
+}
+
+function WalkBadge() {
+  const { tracking, session, earned } = useStepTracker();
+  if (!tracking) return null;
+  return (
+    <Link
+      to="/walk"
+      className="flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-xs font-bold text-primary"
+    >
+      <Footprints className="h-3.5 w-3.5 animate-pulse" />
+      {session} · +{earned}
+    </Link>
+  );
+}
+
+function AppShellInner({ children }: { children: React.ReactNode }) {
   const nav = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { data: profile } = useQuery({ queryKey: ["my-profile"], queryFn: getMyProfile });
   const { data: themes } = useQuery({ queryKey: ["themes"], queryFn: getThemes, staleTime: Infinity });
+
 
   // Apply the equipped theme's tokens to the document.
   const activeKey = profile?.active_theme;
