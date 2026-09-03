@@ -29,8 +29,14 @@ function WalkPage() {
   const [session, setSession] = useState(0);
   const [earned, setEarned] = useState(0);
   const [isMobile, setIsMobile] = useState(true);
+  const [paused, setPaused] = useState(false);
   const pending = useRef(0);
   const lastPeak = useRef(0);
+  // Adaptive filter state: gravity baseline + running noise estimate.
+  const gravity = useRef(9.81);
+  const noise = useRef(0.6);
+  const armed = useRef(true);
+  const wakeLock = useRef<WakeLockSentinel | null>(null);
 
   useEffect(() => {
     const coarse = window.matchMedia("(pointer: coarse)").matches;
@@ -57,18 +63,71 @@ function WalkPage() {
     return () => clearInterval(id);
   }, [tracking, flush]);
 
+  // Keep the screen awake so the OS keeps delivering motion events.
+  useEffect(() => {
+    if (!tracking) return;
+    let cancelled = false;
+    const request = async () => {
+      try {
+        if (!("wakeLock" in navigator) || document.visibilityState !== "visible") return;
+        const s = await navigator.wakeLock.request("screen");
+        if (cancelled) return void s.release();
+        wakeLock.current = s;
+      } catch {
+        /* wake lock unsupported or denied — tracking still works while visible */
+      }
+    };
+    request();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        setPaused(false);
+        request();
+      } else {
+        // Motion events stop when the tab/screen goes away: bank what we have.
+        setPaused(true);
+        flush();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      wakeLock.current?.release().catch(() => {});
+      wakeLock.current = null;
+    };
+  }, [tracking, flush]);
+
   useEffect(() => {
     if (!tracking) return;
     const onMotion = (e: DeviceMotionEvent) => {
-      const a = e.accelerationIncludingGravity;
-      if (!a) return;
-      const mag = Math.sqrt((a.x ?? 0) ** 2 + (a.y ?? 0) ** 2 + (a.z ?? 0) ** 2);
+      // Prefer gravity-free acceleration when the device provides it.
+      const linear = e.acceleration;
+      const raw = linear && linear.x !== null
+        ? Math.sqrt((linear.x ?? 0) ** 2 + (linear.y ?? 0) ** 2 + (linear.z ?? 0) ** 2)
+        : (() => {
+            const a = e.accelerationIncludingGravity;
+            if (!a) return null;
+            const mag = Math.sqrt((a.x ?? 0) ** 2 + (a.y ?? 0) ** 2 + (a.z ?? 0) ** 2);
+            // High-pass: track gravity slowly, subtract it out.
+            gravity.current += (mag - gravity.current) * 0.08;
+            return Math.abs(mag - gravity.current);
+          })();
+      if (raw === null) return;
+
+      // Running noise floor -> adaptive threshold, so gentle and hard walkers both count.
+      noise.current += (raw - noise.current) * 0.05;
+      const high = Math.max(1.1, noise.current * 1.6);
+      const low = high * 0.55;
       const now = Date.now();
-      // Simple peak detector: a step is a >12.5 m/s² spike, at most ~3/second.
-      if (mag > 12.5 && now - lastPeak.current > 320) {
+
+      // Hysteresis + refractory window: one count per real stride, 0.2–2s cadence.
+      if (armed.current && raw > high && now - lastPeak.current > 250) {
+        armed.current = false;
         lastPeak.current = now;
         pending.current += 1;
         setSession((s) => s + 1);
+      } else if (!armed.current && raw < low) {
+        armed.current = true;
       }
     };
     window.addEventListener("devicemotion", onMotion);
@@ -85,14 +144,21 @@ function WalkPage() {
         return toast.error("Motion access unavailable");
       }
     }
+    gravity.current = 9.81;
+    noise.current = 0.6;
+    armed.current = true;
     setTracking(true);
-    toast.success("Walking! Keep your phone on you.");
+    toast.success("Walking! Keep OnlyFriends open — your screen will stay on.");
   }
 
   function stop() {
     setTracking(false);
+    setPaused(false);
+    wakeLock.current?.release().catch(() => {});
+    wakeLock.current = null;
     flush();
   }
+
 
   const total = me?.steps_total ?? 0;
   const toCasino = Math.max(0, 10000 - total);
