@@ -63,13 +63,14 @@ function WalkPage() {
               <p className="text-xs text-muted-foreground">
                 {paused
                   ? "Paused — phone screen off or app in background. Reopen OnlyFriends to keep counting."
-                  : "Screen kept awake. Pocket the phone with the app open and walk."}
+                  : "Tracking stays on everywhere in the app — go doomscroll the feed and keep earning."}
               </p>
             )}
             <p className="text-[11px] text-muted-foreground">
               Phones block websites from reading motion with the screen off, so steps only count while OnlyFriends is
               open. Add it to your home screen for the smoothest walk.
             </p>
+
           </div>
         )}
 
