@@ -8,6 +8,8 @@ import { getMyProfile } from "@/lib/queries";
 import logo from "@/assets/logo.png";
 import { UserAvatar } from "@/components/UserAvatar";
 import { toast } from "sonner";
+import { StepTrackerProvider, useStepTracker } from "@/hooks/useStepTracker";
+
 
 const NAV = [
   { to: "/app", label: "Chats", icon: MessageCircle },
