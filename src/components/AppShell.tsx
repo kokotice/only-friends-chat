@@ -125,14 +125,15 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
           <span className="font-bold">OnlyFriends</span>
         </Link>
         <div className="flex items-center gap-2">
-        <WalkBadge />
-        {profile && (
-
-          <Link to="/wallet" className="rounded-full bg-primary/15 px-3 py-1 text-sm font-bold text-primary">
-            💖 {profile.sparks ?? 0}
-          </Link>
-        )}
+          <WalkBadge />
+          {profile && (
+            <Link to="/wallet" className="rounded-full bg-primary/15 px-3 py-1 text-sm font-bold text-primary">
+              💖 {profile.sparks ?? 0}
+            </Link>
+          )}
+        </div>
       </header>
+
 
       <main className="flex-1 overflow-hidden pb-16 md:pb-0">{children}</main>
 
