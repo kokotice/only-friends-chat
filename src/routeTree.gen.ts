@@ -24,6 +24,7 @@ import { Route as AuthenticatedDiscoverRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedCratesRouteImport } from './routes/_authenticated/crates'
 import { Route as AuthenticatedCasinoRouteImport } from './routes/_authenticated/casino'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
+import { Route as ApiPublicOnlyfriendBotRouteImport } from './routes/api/public/onlyfriend-bot'
 import { Route as AuthenticatedProfileUsernameRouteImport } from './routes/_authenticated/profile.$username'
 import { Route as AuthenticatedPostIdRouteImport } from './routes/_authenticated/post.$id'
 
@@ -102,6 +103,11 @@ const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
   path: '/app',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicOnlyfriendBotRoute = ApiPublicOnlyfriendBotRouteImport.update({
+  id: '/api/public/onlyfriend-bot',
+  path: '/api/public/onlyfriend-bot',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedProfileUsernameRoute =
   AuthenticatedProfileUsernameRouteImport.update({
     id: '/profile/$username',
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof AuthenticatedWalletRoute
   '/post/$id': typeof AuthenticatedPostIdRoute
   '/profile/$username': typeof AuthenticatedProfileUsernameRoute
+  '/api/public/onlyfriend-bot': typeof ApiPublicOnlyfriendBotRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/wallet': typeof AuthenticatedWalletRoute
   '/post/$id': typeof AuthenticatedPostIdRoute
   '/profile/$username': typeof AuthenticatedProfileUsernameRoute
+  '/api/public/onlyfriend-bot': typeof ApiPublicOnlyfriendBotRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/post/$id': typeof AuthenticatedPostIdRoute
   '/_authenticated/profile/$username': typeof AuthenticatedProfileUsernameRoute
+  '/api/public/onlyfriend-bot': typeof ApiPublicOnlyfriendBotRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/post/$id'
     | '/profile/$username'
+    | '/api/public/onlyfriend-bot'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/post/$id'
     | '/profile/$username'
+    | '/api/public/onlyfriend-bot'
   id:
     | '__root__'
     | '/'
@@ -226,12 +237,14 @@ export interface FileRouteTypes {
     | '/_authenticated/wallet'
     | '/_authenticated/post/$id'
     | '/_authenticated/profile/$username'
+    | '/api/public/onlyfriend-bot'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicOnlyfriendBotRoute: typeof ApiPublicOnlyfriendBotRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -341,6 +354,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/onlyfriend-bot': {
+      id: '/api/public/onlyfriend-bot'
+      path: '/api/public/onlyfriend-bot'
+      fullPath: '/api/public/onlyfriend-bot'
+      preLoaderRoute: typeof ApiPublicOnlyfriendBotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/profile/$username': {
       id: '/_authenticated/profile/$username'
       path: '/profile/$username'
@@ -399,6 +419,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicOnlyfriendBotRoute: ApiPublicOnlyfriendBotRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
