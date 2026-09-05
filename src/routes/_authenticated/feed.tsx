@@ -165,8 +165,10 @@ function FeedPage() {
 
   useEffect(() => {
     if (posts.length === 0) return;
+    // `yt:<id>` posts are YouTube embeds from the OnlyFriend bot — nothing to sign.
     const window = posts.slice(Math.max(0, index - 2), index + 8).map((p) => p.video_url);
-    const missing = [...new Set(window.filter((u) => u && !requested.current.has(u)))];
+    const missing = [...new Set(window.filter((u) => u && !u.startsWith("yt:") && !requested.current.has(u)))];
+
     if (missing.length === 0) return;
     let cancelled = false;
     supabase.storage.from("posts").createSignedUrls(missing, 60 * 60 * 6).then(({ data, error }) => {
